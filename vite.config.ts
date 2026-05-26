@@ -20,3 +20,5 @@ export default defineConfig(() => {
     },
   };
 });
+base: '/mcu-fansite/', // 👈 この行を必ず追加してください！（前後のスラッシュを忘れずに）
+})
