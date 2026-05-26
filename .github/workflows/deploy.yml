@@ -3,7 +3,7 @@ name: Deploy to GitHub Pages
 on:
   push:
     branches:
-      - main # あなたのメインブランチ名（main または master）に合わせてください
+      - main
 
 permissions:
   contents: read
@@ -27,11 +27,10 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
-          cache: 'npm'
+          node-version: 24 # 👈 24 に変更して警告を解消します
 
       - name: Install dependencies
-        run: npm ci
+        run: npm install # 👈 ci から install に変更してロックファイル不要にします
 
       - name: Build
         run: npm run build
@@ -39,7 +38,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: './dist' # Viteの出力フォルダである dist を指定
+          path: './dist'
 
       - name: Deploy to GitHub Pages
         id: deployment
