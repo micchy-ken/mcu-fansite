@@ -861,6 +861,8 @@ export default function App() {
             extraMap={extraMap}
             onUpdateDb={handleUpdateDb}
             onResetDb={handleResetDb}
+            reviews={reviews}
+            onUpdateReviews={saveReviews}
           />
         )}
 

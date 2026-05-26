@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { 
-  Plus, Trash2, Edit3, Save, RotateCcw, Download, Check, HelpCircle, AlertCircle, Database, ArrowUpRight, Sparkles, RefreshCw, X
+  Plus, Trash2, Edit3, Save, RotateCcw, Download, Check, HelpCircle, AlertCircle, Database, ArrowUpRight, Sparkles, RefreshCw, X, Upload
 } from 'lucide-react';
 import { McuItem } from '../mcuData';
 import { ExtraItemData, charactersDb } from '../mcuExtraData';
+import { UserReviewsState } from '../types';
 
 const OFFICIAL_MCU_PRESETS = [
   {
@@ -223,14 +224,25 @@ interface DatabaseAdminProps {
   extraMap: Record<string, ExtraItemData>;
   onUpdateDb: (updatedItems: McuItem[], updatedExtraMap: Record<string, ExtraItemData>) => void;
   onResetDb: () => void;
+  reviews: UserReviewsState;
+  onUpdateReviews: (updatedReviews: UserReviewsState) => void;
 }
 
-export default function DatabaseAdmin({ items, extraMap, onUpdateDb, onResetDb }: DatabaseAdminProps) {
+export default function DatabaseAdmin({ items, extraMap, onUpdateDb, onResetDb, reviews, onUpdateReviews }: DatabaseAdminProps) {
   const [selectedId, setSelectedId] = useState<string>('');
   const [isEditing, setIsEditing] = useState(false);
   const [isAddingNew, setIsAddingNew] = useState(false);
   const [showJsonExport, setShowJsonExport] = useState(false);
   const [exportCopied, setExportCopied] = useState(false);
+
+  // Backup & Import manager states
+  const [backupTab, setBackupTab] = useState<'export' | 'import'>('export');
+  const [importJsonText, setImportJsonText] = useState('');
+  const [isDragging, setIsDragging] = useState(false);
+  const [importError, setImportError] = useState<string | null>(null);
+  const [importSuccessMessage, setImportSuccessMessage] = useState<string | null>(null);
+  const [activeExportType, setActiveExportType] = useState<'all' | 'db' | 'reviews'>('all');
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Form states
   const [formId, setFormId] = useState('');
@@ -559,7 +571,6 @@ export default function DatabaseAdmin({ items, extraMap, onUpdateDb, onResetDb }
 
     const cleanId = formId.trim().toLowerCase().replace(/[^a-z0-9_]/g, '');
 
-    // Guard duplicate IDs when adding new
     if (isAddingNew && items.some(item => item.id === cleanId)) {
       alert(`ID "${cleanId}" はすでに他の作品で使われています。別のIDを入力してください。`);
       return;
@@ -603,14 +614,12 @@ export default function DatabaseAdmin({ items, extraMap, onUpdateDb, onResetDb }
       [cleanId]: savedExtra
     };
 
-    // If ID changed during edit, clean up old ID from extra map
     if (!isAddingNew && selectedId !== cleanId) {
       delete updatedExtraMap[selectedId];
     }
 
     onUpdateDb(updatedItems, updatedExtraMap);
 
-    // Reset UI states
     setSelectedId(cleanId);
     setIsAddingNew(false);
     setIsEditing(false);
@@ -632,21 +641,483 @@ export default function DatabaseAdmin({ items, extraMap, onUpdateDb, onResetDb }
     alert('作品を削除しました。');
   };
 
-  const handleExportJson = () => {
-    const backupData = {
+  const getExportData = () => {
+    if (activeExportType === 'db') {
+      return { mcuItems: items, mcuExtraDataMap: extraMap };
+    }
+    if (activeExportType === 'reviews') {
+      return { reviews };
+    }
+    return {
       mcuItems: items,
-      mcuExtraDataMap: extraMap
+      mcuExtraDataMap: extraMap,
+      reviews
     };
-    const jsonStr = JSON.stringify(backupData, null, 2);
-    navigator.clipboard.writeText(jsonStr);
-    setExportCopied(true);
-    setTimeout(() => setExportCopied(false), 3000);
+  };
+
+  const handleExportJson = () => {
+    const data = getExportData();
+    const jsonStr = JSON.stringify(data, null, 2);
+    try {
+      navigator.clipboard.writeText(jsonStr);
+      setExportCopied(true);
+      setTimeout(() => setExportCopied(false), 3000);
+    } catch (err) {
+      console.error('Clipboard copy failed:', err);
+      alert('クリップボードへのコピーに失敗しました。下記のエリアから手動で全選択コピーしてください。');
+    }
+  };
+
+  const handleDownloadBackupFile = () => {
+    const data = getExportData();
+    const prefix = activeExportType === 'all' ? 'mcu_full_backup' : activeExportType === 'db' ? 'mcu_custom_database' : 'mcu_user_reviews';
+    const timestampStr = new Date().toISOString().split('T')[0];
+    const filename = `${prefix}_${timestampStr}.json`;
+
+    try {
+      const jsonStr = JSON.stringify(data, null, 2);
+      const blob = new Blob([jsonStr], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err: any) {
+      alert(`ファイル保存の作成に失敗しました: ${err.message || err}`);
+    }
+  };
+
+  const processImportJson = (text: string) => {
+    setImportError(null);
+    setImportSuccessMessage(null);
+    if (!text.trim()) {
+      setImportError('JSONテキストを入力するか、ファイルをアップロードしてください。');
+      return;
+    }
+
+    try {
+      const parsed = JSON.parse(text);
+      let importedDbCount = 0;
+      let importedReviewsCount = 0;
+      let targetDbItems: McuItem[] | null = null;
+      let targetExtraMap: Record<string, ExtraItemData> | null = null;
+      let targetReviews: UserReviewsState | null = null;
+
+      if (parsed.mcuItems && Array.isArray(parsed.mcuItems)) {
+        targetDbItems = parsed.mcuItems;
+        importedDbCount = parsed.mcuItems.length;
+      }
+      if (parsed.mcuExtraDataMap && typeof parsed.mcuExtraDataMap === 'object') {
+        targetExtraMap = parsed.mcuExtraDataMap;
+      }
+
+      const reviewsSource = parsed.reviews || parsed.mcu_user_reviews;
+
+      if (reviewsSource && typeof reviewsSource === 'object' && !Array.isArray(reviewsSource)) {
+        const keys = Object.keys(reviewsSource);
+        const looksLikeReviews = keys.length === 0 || keys.every(k => {
+          const v = reviewsSource[k];
+          return v && (typeof v.watched === 'boolean' || v.rating !== undefined || typeof v.notes === 'string');
+        });
+        if (looksLikeReviews) {
+          targetReviews = reviewsSource;
+          importedReviewsCount = keys.length;
+        }
+      } else if (!targetDbItems) {
+        const keys = Object.keys(parsed);
+        if (keys.length > 0) {
+          const looksLikeRawReviews = keys.every(k => {
+            const v = parsed[k];
+            return v && (typeof v.watched === 'boolean' || v.rating !== undefined || typeof v.notes === 'string');
+          });
+          if (looksLikeRawReviews) {
+            targetReviews = parsed as UserReviewsState;
+            importedReviewsCount = keys.length;
+          }
+        }
+      }
+
+      if (!targetDbItems && !targetReviews) {
+        throw new Error('インポート対象のデータが見つかりませんでした。エクスポートしたJSONファイルである必要があります。');
+      }
+
+      let confirmMsg = '以下のデータを既存データにマージして現在の環境にインポートしますか？\n\n';
+      if (targetDbItems) {
+        confirmMsg += `・作品データベース定義: ${importedDbCount} 件\n`;
+      }
+      if (targetReviews) {
+        confirmMsg += `・マイ個人感想・鑑賞記録: ${importedReviewsCount} 件\n`;
+      }
+      confirmMsg += '\n※既に同じIDのアイテムが存在する場合はインポートデータで上書きされます。\n続行してよろしいですか？';
+
+      if (!window.confirm(confirmMsg)) {
+        return;
+      }
+
+      if (targetDbItems) {
+        const cleanExtraMap = targetExtraMap || {};
+        const mergedExtra = { ...extraMap };
+
+        targetDbItems.forEach(item => {
+          if (cleanExtraMap[item.id]) {
+            mergedExtra[item.id] = cleanExtraMap[item.id];
+          } else if (!mergedExtra[item.id]) {
+            mergedExtra[item.id] = {
+              heroIcon: '🎬',
+              heroIconName: 'Film',
+              accentColor: '#3b82f6',
+              characterIds: []
+            };
+          }
+        });
+
+        const mergedItems = [...items];
+        targetDbItems.forEach(item => {
+          const idx = mergedItems.findIndex(x => x.id === item.id);
+          if (idx > -1) {
+            mergedItems[idx] = item;
+          } else {
+            mergedItems.push(item);
+          }
+        });
+
+        onUpdateDb(mergedItems, mergedExtra);
+      }
+
+      if (targetReviews) {
+        onUpdateReviews({
+          ...reviews,
+          ...targetReviews
+        });
+      }
+
+      let successMsg = 'データのインポートが正常に完了しました！\n';
+      if (targetDbItems) successMsg += `・カスタム作品データベース: ${importedDbCount}件をインポートしました。\n`;
+      if (targetReviews) successMsg += `・マイ感想・鑑賞履歴: ${importedReviewsCount}件を復元・マージしました。\n`;
+
+      setImportSuccessMessage(successMsg);
+      setImportJsonText('');
+      alert(successMsg);
+    } catch (e: any) {
+      console.error('Import process failed:', e);
+      setImportError(`インポートに失敗しました: ${e.message || 'JSONフォーマットが間違っているか、ファイルが破損している可能性があります。'}`);
+    }
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const text = event.target?.result as string;
+      processImportJson(text);
+    };
+    reader.readAsText(file);
+    if (e.target) {
+      e.target.value = '';
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = () => {
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const file = e.dataTransfer.files?.[0];
+    if (!file) return;
+
+    if (!file.name.endsWith('.json')) {
+      setImportError('JSONファイル（.json）をドロップしてください。');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const text = event.target?.result as string;
+      processImportJson(text);
+    };
+    reader.readAsText(file);
   };
 
   return (
     <div className="space-y-6">
-      {/* Introduction banner */}
       <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
+        <div className="flex items-start gap-4">
+          <div className="bg-red-950/40 p-3 rounded-xl border border-red-900/30 text-red-500">
+            <Database className="w-6 h-6" />
+          </div>
+          <div className="space-y-1 flex-1">
+            <h3 className="text-lg font-bold text-slate-200">MCUデータベース・カスタマイザー</h3>
+            <p className="text-sm text-slate-400 leading-relaxed font-sans">
+              MCUの作品名や公開スケジュールを編集・追加するための開発パネルです。
+              例えば、映画『アベンジャーズ：ドゥームズデイ』の日程を変更（後倒しなど）すると、タイムラインや統計情報、アベンジャーズの相関キャラクター関係がリアルタイムで自動更新されます。
+              新たにお気に入りの作品情報が公式に発表された場合にも、ここから自由に追加できます。
+            </p>
+            <div className="flex flex-wrap items-center gap-3 pt-3">
+              <button
+                type="button"
+                onClick={handlePrepareAddNew}
+                className="inline-flex items-center gap-1.5 px-4 py-2 bg-red-650 hover:bg-red-550 text-white rounded-xl text-xs font-bold transition-all cursor-pointer shadow-md"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                新しい作品を追加する
+              </button>
+              <button
+                type="button"
+                onClick={handlePresetSync}
+                disabled={isSyncing}
+                className="inline-flex items-center gap-1.5 px-4 py-2 bg-slate-800 hover:bg-slate-750 text-amber-400 hover:text-amber-300 rounded-xl text-xs font-bold transition-all border border-amber-500/30 cursor-pointer shadow-md"
+                title="Google APIキー不要、オフライン動作可能なローカル公式最新データを一括ロードします"
+              >
+                <Check className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                公式プリセットから同期 (高速・API不要)
+              </button>
+              <button
+                type="button"
+                onClick={handleFetchOfficialMcu}
+                disabled={isSyncing}
+                className="inline-flex items-center gap-1.5 px-4 py-2 bg-amber-600 hover:bg-amber-500 disabled:bg-amber-800 disabled:opacity-50 text-white rounded-xl text-xs font-bold transition-all cursor-pointer shadow-md"
+                title="Gemini AIを使って、最新のディズニー/マーベル公式サイト等のスケジュール更新情報をWebからディープ検索して同期します"
+              >
+                {isSyncing ? (
+                  <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <Sparkles className="w-3.5 h-3.5" />
+                )}
+                {isSyncing ? '公式スケジュールを収集中...' : '最新情報をAI検索同期 (要APIキー)'}
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowJsonExport(!showJsonExport)}
+                className="inline-flex items-center gap-1.5 px-4 py-2 bg-slate-800 hover:bg-slate-755 hover:text-white text-slate-300 rounded-xl text-xs font-bold transition-all border border-slate-700 cursor-pointer"
+              >
+                <Download className="w-3.5 h-3.5" />
+                データのエクスポート/バックアップ
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (window.confirm('データベースを最初のデフォルト状態にリセットします。\n※これまでこのパネルで追加・編集したすべてのカスタム作品データおよび公開日等の変更が取り消されます。鑑賞履歴や感想は消えません。')) {
+                    onResetDb();
+                    setIsEditing(false);
+                    setSelectedId('');
+                    alert('データベースをリセットしました。');
+                  }
+                }}
+                className="inline-flex items-center gap-1.5 px-3 py-2 bg-slate-950 hover:bg-slate-900 text-slate-500 hover:text-slate-300 rounded-xl text-xs font-bold transition-all border border-slate-900 cursor-pointer ml-auto"
+                title="デフォルトデータベースに戻す"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                初期デフォルトに戻す
+              </button>
+            </div>
+
+            {syncError && (
+              <div className="mt-3 p-3 bg-red-950/40 border border-red-900/30 rounded-xl flex items-center gap-2 text-xs text-red-400 font-sans">
+                <AlertCircle className="w-4 h-4 text-red-500 shrink-0" />
+                <span>{syncError}</span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Backup/Import Panel */}
+        {showJsonExport && (
+          <div className="mt-5 p-5 bg-slate-950 border border-slate-850 rounded-2xl space-y-4 animate-fade-in text-left">
+            {/* Tab navigation */}
+            <div className="flex border-b border-slate-850 pb-2.5">
+              <button
+                type="button"
+                onClick={() => setBackupTab('export')}
+                className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all duration-200 cursor-pointer relative ${
+                  backupTab === 'export'
+                    ? 'text-amber-400 bg-slate-900 border border-slate-850'
+                    : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                エクスポート (保存・バックアップ)
+              </button>
+              <button
+                type="button"
+                onClick={() => setBackupTab('import')}
+                className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all duration-200 cursor-pointer relative ${
+                  backupTab === 'import'
+                    ? 'text-amber-400 bg-slate-900 border border-slate-850'
+                    : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                インポート (復元・読み込み)
+              </button>
+            </div>
+
+            {/* Export Tab View */}
+            {backupTab === 'export' ? (
+              <div className="space-y-4">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                  <span className="text-xs font-bold text-slate-300 flex items-center gap-1.5 font-sans">
+                    <Check className="w-4 h-4 text-emerald-500 animate-pulse" />
+                    エクスポート対象のデータ選択
+                  </span>
+                  
+                  <div className="flex items-center gap-1 bg-slate-900 p-1 rounded-xl border border-slate-850">
+                    <button
+                      type="button"
+                      onClick={() => setActiveExportType('all')}
+                      className={`px-2.5 py-1 rounded-lg text-[10px] font-bold cursor-pointer transition-all ${
+                        activeExportType === 'all' ? 'bg-amber-500 text-slate-950' : 'text-slate-400 hover:text-slate-200'
+                      }`}
+                    >
+                      すべて (推奨)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setActiveExportType('db')}
+                      className={`px-2.5 py-1 rounded-lg text-[10px] font-bold cursor-pointer transition-all ${
+                        activeExportType === 'db' ? 'bg-amber-500 text-slate-950' : 'text-slate-400 hover:text-slate-200'
+                      }`}
+                    >
+                      作品DBのみ
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setActiveExportType('reviews')}
+                      className={`px-2.5 py-1 rounded-lg text-[10px] font-bold cursor-pointer transition-all ${
+                        activeExportType === 'reviews' ? 'bg-amber-500 text-slate-950' : 'text-slate-400 hover:text-slate-200'
+                      }`}
+                    >
+                      マイ感想・履歴のみ
+                    </button>
+                  </div>
+                </div>
+
+                <p className="text-[10px] text-slate-500 leading-relaxed font-sans">
+                  ※お好みのデータを選択してバックアップファイルに保存するか、クリップボードの内容をテキストとして控えることができます。
+                </p>
+
+                <textarea
+                  readOnly
+                  value={JSON.stringify(getExportData(), null, 2)}
+                  rows={6}
+                  className="w-full bg-slate-900 text-[11px] font-mono text-emerald-400 border border-slate-850 rounded-xl p-3 outline-none"
+                  onClick={(e) => (e.target as HTMLTextAreaElement).select()}
+                  title="クリックして全選択"
+                />
+
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 pt-2 font-sans">
+                  <p className="text-[10px] text-slate-500 leading-relaxed max-w-xl">
+                    💡 **ヒント：** バックアップしたファイルを大切に保管してください。
+                    キャッシュクリアでデータが消えても、隣の「インポート」タブからいつでも元の状態に復元可能です。
+                  </p>
+                  <div className="flex gap-2 shrink-0 w-full sm:w-auto">
+                    <button
+                      type="button"
+                      onClick={handleExportJson}
+                      className={`flex-1 sm:flex-none px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                        exportCopied ? 'bg-emerald-600 text-white' : 'bg-slate-850 hover:bg-slate-800 text-slate-200 border border-slate-750'
+                      }`}
+                    >
+                      {exportCopied ? 'コピー完了！' : 'クリップボードにコピー'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleDownloadBackupFile}
+                      className="flex-1 sm:flex-none px-4 py-2 bg-slate-800 hover:bg-slate-750 text-amber-400 hover:text-amber-300 rounded-xl text-xs font-bold transition-all border border-amber-500/30 cursor-pointer flex items-center justify-center gap-1.5"
+                    >
+                      <Download className="w-3.5 h-3.5" />
+                      ファイルでダウンロード
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {/* Drag and Drop Zone */}
+                <div
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onDrop={handleDrop}
+                  onClick={() => fileInputRef.current?.click()}
+                  className={`border-2 border-dashed rounded-2xl p-6 text-center cursor-pointer transition-all ${
+                    isDragging
+                      ? 'border-amber-500 bg-amber-950/20 text-amber-400'
+                      : 'border-slate-850 bg-slate-900/50 text-slate-400 hover:bg-slate-900 hover:border-slate-700'
+                  }`}
+                >
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleFileUpload}
+                    accept=".json"
+                    className="hidden"
+                  />
+                  <div className="flex flex-col items-center gap-2 font-sans">
+                    <Upload className="w-8 h-8 text-slate-500 mb-1" />
+                    <p className="text-xs font-bold text-slate-300">
+                      ここにバックアップした JSON ファイルをドラッグ&ドロップ
+                    </p>
+                    <p className="text-[10px] text-slate-500">
+                      または、ここをクリックしてパソコンからファイルを選択 (.json)
+                    </p>
+                  </div>
+                </div>
+
+                {/* Paste fallback */}
+                <div className="space-y-1.5 font-sans">
+                  <label className="text-[11px] font-bold text-slate-400 block">
+                    または、コピーしたバックアップJSONテキストを直接貼り付け：
+                  </label>
+                  <textarea
+                    placeholder="ここにエクスポートしたJSONデータを貼り付けてください..."
+                    value={importJsonText}
+                    onChange={(e) => setImportJsonText(e.target.value)}
+                    rows={4}
+                    className="w-full bg-slate-900 text-[11px] font-mono text-slate-300 border border-slate-850 rounded-xl p-3 outline-none focus:border-slate-700"
+                  />
+                </div>
+
+                {importError && (
+                  <div className="p-3 bg-red-950/30 border border-red-900/30 rounded-xl text-xs text-red-400 leading-relaxed flex items-start gap-1.5 font-sans">
+                    <AlertCircle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
+                    <span>{importError}</span>
+                  </div>
+                )}
+
+                {importSuccessMessage && (
+                  <div className="p-3 bg-emerald-950/30 border border-emerald-950/50 rounded-xl text-xs text-emerald-400 leading-relaxed flex items-start gap-1.5 font-sans">
+                    <Check className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
+                    <span className="whitespace-pre-line">{importSuccessMessage}</span>
+                  </div>
+                )}
+
+                <div className="flex justify-end pt-1">
+                  <button
+                    type="button"
+                    onClick={() => processImportJson(importJsonText)}
+                    disabled={!importJsonText.trim()}
+                    className="w-full sm:w-auto px-6 py-2.5 bg-gradient-to-r from-red-650 to-amber-600 hover:from-red-550 hover:to-amber-500 disabled:opacity-40 text-white rounded-xl text-xs font-bold transition-all cursor-pointer shadow-md flex items-center justify-center gap-2"
+                  >
+                    <Check className="w-4 h-4" />
+                    <span>貼り付けたデータをインポートする</span>
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+      {false && (
+        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
         <div className="flex items-start gap-4">
           <div className="bg-red-950/40 p-3 rounded-xl border border-red-900/30 text-red-500">
             <Database className="w-6 h-6" />
@@ -752,6 +1223,7 @@ export default function DatabaseAdmin({ items, extraMap, onUpdateDb, onResetDb }
           </div>
         )}
       </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* Left: Works selector list (4 cols) */}
