@@ -1,6 +1,6 @@
 {
   "name": "MCU鑑賞ガイド＆時系列トラッカー",
-  "description": "マーベル・シネマティック・ユニバース（MCU）の映画・ドラマを、公開順や劇中時系列で整理し、あらすじや重要度をチェックしながら鑑賞記録・感想を残せるファン向けのパーソナル・ダッシュボードです。",
+  "description": "マーベル・シネマティック・ユニバース（MCU）の　映画・ドラマを、公開順や劇中時系列で整理し、あらすじや重要度をチェックしながら鑑賞記録・感想を残せるファン向けのパーソナル・ダッシュボードです。",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }
