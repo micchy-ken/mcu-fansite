@@ -108,9 +108,11 @@ export default function McuCard({
       <div className="px-4 py-3 flex items-center justify-between gap-1.5 border-b border-slate-850/40 bg-slate-950/20">
         {/* Left: Index Badge & Hero Icon Motif */}
         <div className="flex items-center gap-1.5 min-w-0">
-          <div className="font-mono text-[9px] font-bold px-1.5 py-0.5 bg-slate-950 text-slate-300 rounded border border-slate-800 shadow-xs whitespace-nowrap shrink-0">
-            {orderType === 'chrono' ? `劇中順 ${item.chronoOrder}` : `公開順 ${item.releaseOrder}`}
-          </div>
+          {orderType === 'chrono' && (
+            <div className="font-mono text-[9px] font-bold px-1.5 py-0.5 bg-slate-950 text-slate-300 rounded border border-slate-800 shadow-xs whitespace-nowrap shrink-0">
+              劇中順 {item.chronoOrder}
+            </div>
+          )}
           <div 
             className="text-xs px-1.5 py-0.5 bg-slate-950 rounded border border-slate-800 flex items-center justify-center shadow-xs shrink-0"
             title="ヒーローモチーフ"

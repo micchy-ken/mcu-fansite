@@ -13,7 +13,6 @@ const OFFICIAL_MCU_PRESETS = [
     titleEn: 'Captain America: Brave New World',
     type: 'movie',
     releaseDate: '2025-02-14',
-    releaseOrder: 46,
     chronoOrder: 47,
     chronoSetting: '2026年（サムが重責を担う新たなキャプテン・アメリカ時代）',
     phase: 5,
@@ -34,7 +33,6 @@ const OFFICIAL_MCU_PRESETS = [
     titleEn: 'Daredevil: Born Again',
     type: 'drama',
     releaseDate: '2025-03-04',
-    releaseOrder: 47,
     chronoOrder: 48,
     chronoSetting: '2026年（ニューヨーク裏社会、市長となったキングピンとの法廷・肉体戦）',
     phase: 5,
@@ -55,7 +53,6 @@ const OFFICIAL_MCU_PRESETS = [
     titleEn: 'Thunderbolts*',
     type: 'movie',
     releaseDate: '2025-05-02',
-    releaseOrder: 48,
     chronoOrder: 49,
     chronoSetting: '2026年（過去に苦しんだはみ出し者たち・影の政府任務）',
     phase: 5,
@@ -76,7 +73,6 @@ const OFFICIAL_MCU_PRESETS = [
     titleEn: 'The Fantastic Four: First Steps',
     type: 'movie',
     releaseDate: '2025-07-25',
-    releaseOrder: 49,
     chronoOrder: 50,
     chronoSetting: '1960年代のレトロフューチャーな異次元パラレルワールド',
     phase: 6,
@@ -97,7 +93,6 @@ const OFFICIAL_MCU_PRESETS = [
     titleEn: 'Eyes of Wakanda',
     type: 'drama',
     releaseDate: '2025-08-06',
-    releaseOrder: 50,
     chronoOrder: 51,
     chronoSetting: 'ワカンダ王国が数千年にわたり培ってきた高潔な歴史・過去',
     phase: 5,
@@ -118,7 +113,6 @@ const OFFICIAL_MCU_PRESETS = [
     titleEn: 'Ironheart',
     type: 'drama',
     releaseDate: '2025-09-03',
-    releaseOrder: 51,
     chronoOrder: 52,
     chronoSetting: '2026年（ブラックパンサー／ワカンダ・フォーエバーの直接の続編）',
     phase: 5,
@@ -139,7 +133,6 @@ const OFFICIAL_MCU_PRESETS = [
     titleEn: 'Wonder Man',
     type: 'drama',
     releaseDate: '2025-12-17',
-    releaseOrder: 52,
     chronoOrder: 53,
     chronoSetting: '2026年（ハリウッドの映画界、ヒーロー文化がビジネス化した世界）',
     phase: 5,
@@ -160,7 +153,6 @@ const OFFICIAL_MCU_PRESETS = [
     titleEn: 'Avengers: Doomsday',
     type: 'movie',
     releaseDate: '2026-05-01',
-    releaseOrder: 53,
     chronoOrder: 54,
     chronoSetting: '2026〜2027年（マルチバース全体の破滅と衝突の幕開け）',
     phase: 6,
@@ -181,7 +173,6 @@ const OFFICIAL_MCU_PRESETS = [
     titleEn: 'Spider-Man 4 (MCU)',
     type: 'movie',
     releaseDate: '2026-07-24',
-    releaseOrder: 54,
     chronoOrder: 55,
     chronoSetting: '2027年（記憶を失った孤独なピーター・パーカーが親愛なる隣人として奮闘する新章）',
     phase: 6,
@@ -202,7 +193,6 @@ const OFFICIAL_MCU_PRESETS = [
     titleEn: 'Avengers: Secret Wars',
     type: 'movie',
     releaseDate: '2027-05-07',
-    releaseOrder: 55,
     chronoOrder: 56,
     chronoSetting: '時空を超えあらゆる並行宇宙が融合した究極の世界「バトルワールド」',
     phase: 6,
@@ -250,7 +240,7 @@ export default function DatabaseAdmin({ items, extraMap, onUpdateDb, onResetDb, 
   const [formTitleEn, setFormTitleEn] = useState('');
   const [formType, setFormType] = useState<'movie' | 'drama' | 'special'>('movie');
   const [formReleaseDate, setFormReleaseDate] = useState('');
-  const [formReleaseOrder, setFormReleaseOrder] = useState<number>(1);
+
   const [formChronoOrder, setFormChronoOrder] = useState<number>(1);
   const [formChronoSetting, setFormChronoSetting] = useState('');
   const [formPhase, setFormPhase] = useState<number>(1);
@@ -376,7 +366,7 @@ export default function DatabaseAdmin({ items, extraMap, onUpdateDb, onResetDb, 
         titleEn: fetched.titleEn || fetched.titleJa,
         type: fetched.type as any,
         releaseDate: fetched.releaseDate,
-        releaseOrder: Number(fetched.releaseOrder),
+        
         chronoOrder: Number(fetched.chronoOrder),
         chronoSetting: fetched.chronoSetting,
         phase: Number(fetched.phase),
@@ -452,7 +442,7 @@ export default function DatabaseAdmin({ items, extraMap, onUpdateDb, onResetDb, 
         setFormTitleEn(item.titleEn);
         setFormType(item.type);
         setFormReleaseDate(item.releaseDate);
-        setFormReleaseOrder(Number(item.releaseOrder));
+
         setFormChronoOrder(Number(item.chronoOrder));
         setFormChronoSetting(item.chronoSetting);
         setFormPhase(Number(item.phase));
@@ -494,7 +484,7 @@ export default function DatabaseAdmin({ items, extraMap, onUpdateDb, onResetDb, 
     setFormTitleEn(work.titleEn);
     setFormType(work.type);
     setFormReleaseDate(work.releaseDate);
-    setFormReleaseOrder(work.releaseOrder);
+    
     setFormChronoOrder(work.chronoOrder);
     setFormChronoSetting(work.chronoSetting || '');
     setFormPhase(work.phase);
@@ -524,7 +514,7 @@ export default function DatabaseAdmin({ items, extraMap, onUpdateDb, onResetDb, 
     setSelectedId('');
 
     // Generate maximum orders to make addition easy
-    const maxRelease = items.reduce((max, item) => Math.max(max, item.releaseOrder), 0) + 1;
+    
     const maxChrono = items.reduce((max, item) => Math.max(max, item.chronoOrder), 0) + 1;
     const maxPhase = items.reduce((max, item) => Math.max(max, item.phase), 0) || 5;
 
@@ -534,7 +524,7 @@ export default function DatabaseAdmin({ items, extraMap, onUpdateDb, onResetDb, 
     setFormTitleEn('');
     setFormType('movie');
     setFormReleaseDate(new Date().toISOString().split('T')[0]);
-    setFormReleaseOrder(maxRelease);
+    
     setFormChronoOrder(maxChrono);
     setFormChronoSetting('');
     setFormPhase(maxPhase);
@@ -582,7 +572,7 @@ export default function DatabaseAdmin({ items, extraMap, onUpdateDb, onResetDb, 
       titleEn: formTitleEn.trim() || formTitleJa.trim(),
       type: formType,
       releaseDate: formReleaseDate,
-      releaseOrder: Number(formReleaseOrder),
+      
       chronoOrder: Number(formChronoOrder),
       chronoSetting: formChronoSetting.trim(),
       phase: Number(formPhase),
@@ -1240,7 +1230,7 @@ export default function DatabaseAdmin({ items, extraMap, onUpdateDb, onResetDb, 
           <div className="space-y-1">
             {items
               .slice()
-              .sort((a, b) => b.phase - a.phase || b.releaseOrder - a.releaseOrder)
+              .sort((a, b) => b.phase - a.phase || new Date(b.releaseDate).getTime() - new Date(a.releaseDate).getTime())
               .map(work => {
                 const extra = extraMap[work.id] || { heroIcon: '🎬', accentColor: '#475569' };
                 const isSelected = work.id === selectedId;
@@ -1267,7 +1257,7 @@ export default function DatabaseAdmin({ items, extraMap, onUpdateDb, onResetDb, 
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-1">
                         <span className="text-[9px] font-mono font-bold text-slate-500 uppercase">
-                          PHASE {work.phase} • #{work.releaseOrder}
+                          PHASE {work.phase}
                         </span>
                         <span className="text-[10px] text-slate-400 font-mono">
                           {work.releaseDate.split('-')[0]}
@@ -1452,18 +1442,7 @@ export default function DatabaseAdmin({ items, extraMap, onUpdateDb, onResetDb, 
                   </select>
                 </div>
 
-                {/* Release Order */}
-                <div>
-                  <label className="text-xs font-bold text-slate-400 block mb-1 font-mono">
-                    公開順カウント (インデックス番号)
-                  </label>
-                  <input
-                    type="number"
-                    value={formReleaseOrder}
-                    onChange={(e) => setFormReleaseOrder(Number(e.target.value))}
-                    className="w-full bg-slate-950 hover:bg-slate-900 border border-slate-800 text-slate-200 text-sm rounded-xl p-2.5 outline-none focus:border-slate-700 font-mono"
-                  />
-                </div>
+
 
                 {/* Chrono Order */}
                 <div>

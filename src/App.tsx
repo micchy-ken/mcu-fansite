@@ -44,16 +44,39 @@ export default function App() {
     try {
       const storedItems = localStorage.getItem('mcu_custom_db_items');
       const storedExtra = localStorage.getItem('mcu_custom_db_extra');
+      
+      let finalItems: McuItem[] = [...mcuItems];
+      let finalExtra: Record<string, ExtraItemData> = { ...mcuExtraDataMap };
+
       if (storedItems) {
-        setDbItems(JSON.parse(storedItems));
-      } else {
-        setDbItems(mcuItems);
+        const parsedItems = JSON.parse(storedItems) as McuItem[];
+        // Find items that exist in the hardcoded data but not in local storage
+        const storedIds = new Set(parsedItems.map((item: any) => item.id));
+        const missingItems = mcuItems.filter((item: any) => !storedIds.has(item.id));
+        
+        // To also apply the fix for removed "releaseOrder", we map parsedItems
+        const cleanParsedItems = parsedItems.map((item: any) => {
+          // You could delete item.releaseOrder here, but setting the DB is sufficient
+          return item;
+        });
+
+        finalItems = [...cleanParsedItems, ...missingItems];
       }
+
       if (storedExtra) {
-        setExtraMap(JSON.parse(storedExtra));
-      } else {
-        setExtraMap(mcuExtraDataMap);
+        const parsedExtra = JSON.parse(storedExtra);
+        finalExtra = { ...mcuExtraDataMap, ...parsedExtra };
       }
+
+      // Sort just in case added items break the order
+      finalItems.sort((a, b) => new Date(a.releaseDate).getTime() - new Date(b.releaseDate).getTime());
+
+      setDbItems(finalItems);
+      setExtraMap(finalExtra);
+      
+      // Resync updated combined data to local storage
+      localStorage.setItem('mcu_custom_db_items', JSON.stringify(finalItems));
+      localStorage.setItem('mcu_custom_db_extra', JSON.stringify(finalExtra));
     } catch (e) {
       console.error('Failed to load custom database:', e);
       setDbItems(mcuItems);
@@ -225,7 +248,7 @@ export default function App() {
       if (sortOrder === 'chrono') {
         return a.chronoOrder - b.chronoOrder;
       }
-      return a.releaseOrder - b.releaseOrder;
+      return new Date(a.releaseDate).getTime() - new Date(b.releaseDate).getTime();
     });
 
     return items;
@@ -670,7 +693,7 @@ export default function App() {
                             P{item.phase}
                           </span>
                           <span className="text-[9px] mt-0.5 whitespace-nowrap bg-slate-100 text-slate-600 px-1 py-0.5 rounded scale-90">
-                            {sortOrder === 'chrono' ? `#${item.chronoOrder}` : `#${item.releaseOrder}`}
+                            {sortOrder === 'chrono' ? `#${item.chronoOrder}` : ''}
                           </span>
                         </div>
                       </motion.div>
