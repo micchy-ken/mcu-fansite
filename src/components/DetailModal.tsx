@@ -123,7 +123,7 @@ export default function DetailModal({ item, review, onClose, onSaveReview, onCha
                 • {item.durationOrEpisodes}
               </span>
             </div>
-            <h3 className="text-2xl font-extrabold text-white font-display mt-2">
+            <h3 className="text-2xl font-extrabold text-slate-50 font-display mt-2">
               {item.titleJa}
             </h3>
             <p className="text-xs text-slate-500 font-mono italic mt-0.5">
@@ -185,7 +185,7 @@ export default function DetailModal({ item, review, onClose, onSaveReview, onCha
                           onCharacterClick(charId);
                         }
                       }}
-                      className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs bg-slate-900 text-slate-300 border border-slate-800 hover:border-red-500 hover:bg-slate-800/80 hover:text-white transition-all cursor-pointer group/char"
+                      className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs bg-slate-900 text-slate-300 border border-slate-800 hover:border-red-500 hover:bg-slate-800/80 hover:text-slate-50 transition-all cursor-pointer group/char"
                       title={`${char.nameJa}が出演する他の作品を表示します`}
                     >
                       <span className="text-sm">{char.emoji}</span>

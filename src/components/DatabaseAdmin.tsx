@@ -890,7 +890,7 @@ export default function DatabaseAdmin({ items, extraMap, onUpdateDb, onResetDb, 
               <button
                 type="button"
                 onClick={() => setShowJsonExport(!showJsonExport)}
-                className="inline-flex items-center gap-1.5 px-4 py-2 bg-slate-800 hover:bg-slate-755 hover:text-white text-slate-300 rounded-xl text-xs font-bold transition-all border border-slate-700 cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-4 py-2 bg-slate-800 hover:bg-slate-755 hover:text-slate-50 text-slate-300 rounded-xl text-xs font-bold transition-all border border-slate-700 cursor-pointer"
               >
                 <Download className="w-3.5 h-3.5" />
                 データのエクスポート/バックアップ
@@ -1153,7 +1153,7 @@ export default function DatabaseAdmin({ items, extraMap, onUpdateDb, onResetDb, 
               </button>
               <button
                 onClick={() => setShowJsonExport(!showJsonExport)}
-                className="inline-flex items-center gap-1.5 px-4 py-2 bg-slate-800 hover:bg-slate-700 hover:text-white text-slate-300 rounded-xl text-xs font-bold transition-all border border-slate-700 cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-4 py-2 bg-slate-800 hover:bg-slate-700 hover:text-slate-50 text-slate-300 rounded-xl text-xs font-bold transition-all border border-slate-700 cursor-pointer"
               >
                 <Download className="w-3.5 h-3.5" />
                 データのエクスポート/バックアップ
@@ -1654,7 +1654,7 @@ export default function DatabaseAdmin({ items, extraMap, onUpdateDb, onResetDb, 
                       setIsAddingNew(false);
                       setSelectedId('');
                     }}
-                    className="px-4 py-2 hover:bg-slate-800 text-slate-400 hover:text-white rounded-xl text-xs font-bold transition-all cursor-pointer"
+                    className="px-4 py-2 hover:bg-slate-800 text-slate-400 hover:text-slate-50 rounded-xl text-xs font-bold transition-all cursor-pointer"
                   >
                     キャンセル
                   </button>
@@ -1694,7 +1694,7 @@ export default function DatabaseAdmin({ items, extraMap, onUpdateDb, onResetDb, 
               </div>
               <button
                 onClick={() => setShowSyncModal(false)}
-                className="text-slate-400 hover:text-white p-1.5 hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
+                className="text-slate-400 hover:text-slate-50 p-1.5 hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -1843,7 +1843,7 @@ export default function DatabaseAdmin({ items, extraMap, onUpdateDb, onResetDb, 
                 <button
                   type="button"
                   onClick={() => setShowSyncModal(false)}
-                  className="px-4 py-2 hover:bg-slate-800 text-slate-400 hover:text-white rounded-xl text-xs font-bold transition-all cursor-pointer"
+                  className="px-4 py-2 hover:bg-slate-800 text-slate-400 hover:text-slate-50 rounded-xl text-xs font-bold transition-all cursor-pointer"
                 >
                   キャンセル
                 </button>

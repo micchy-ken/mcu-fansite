@@ -189,7 +189,7 @@ export default function McuCard({
           </div>
 
           {/* Titles */}
-          <h4 className="text-base font-bold text-slate-100 line-clamp-1 group-hover:text-white transition-colors mt-1 flex items-center gap-1.5">
+          <h4 className="text-base font-bold text-slate-100 line-clamp-1 group-hover:text-slate-50 transition-colors mt-1 flex items-center gap-1.5">
             <span className="line-clamp-1">{item.titleJa}</span>
           </h4>
           <p className="text-xs text-slate-500 font-mono italic truncate mt-0.5">
@@ -226,7 +226,7 @@ export default function McuCard({
                       }}
                       className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] border transition-colors cursor-pointer ${
                         isSelected 
-                          ? 'bg-slate-800 text-white font-bold border-red-500' 
+                          ? 'bg-slate-800 text-slate-50 font-bold border-red-500' 
                           : 'bg-slate-950/60 text-slate-400 border-slate-850 hover:border-slate-700 hover:text-slate-200'
                       }`}
                       title={`${char.nameJa}の登場作品を絞り込む`}

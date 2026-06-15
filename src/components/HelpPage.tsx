@@ -16,7 +16,7 @@ export default function HelpPage() {
             <BookOpen className="w-3.5 h-3.5" />
             USER GUIDE
           </div>
-          <h2 className="text-xl md:text-2xl font-black text-white tracking-tight">
+          <h2 className="text-xl md:text-2xl font-black text-slate-50 tracking-tight">
             MCUタイムライン・トラッカー ＆ データベース管理者ガイド
           </h2>
           <p className="text-sm text-slate-400 leading-relaxed max-w-2xl">

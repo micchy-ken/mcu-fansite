@@ -3,7 +3,8 @@ import { motion, AnimatePresence } from 'motion/react';
 import { 
   Search, SlidersHorizontal, ListOrdered, Calendar, 
   MessageSquare, Flame, Tv, Film, RotateCcw, Award, CheckSquare, Check, 
-  Grid, List, Sparkles, Star, Heart, FileText, ChevronRight, UserMinus, Database, HelpCircle
+  Grid, List, Sparkles, Star, Heart, FileText, ChevronRight, UserMinus, Database, HelpCircle,
+  Sun, Moon
 } from 'lucide-react';
 import { mcuItems, McuItem } from './mcuData';
 import { UserReviewsState, FilterState, SortOrder, UserReview } from './types';
@@ -29,6 +30,20 @@ export default function App() {
   // Dynamic database states
   const [dbItems, setDbItems] = useState<McuItem[]>([]);
   const [extraMap, setExtraMap] = useState<Record<string, ExtraItemData>>({});
+
+  // Theme states
+  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
+    return (localStorage.getItem('mcu_theme') as 'light' | 'dark') || 'dark';
+  });
+
+  useEffect(() => {
+    if (theme === 'light') {
+      document.documentElement.setAttribute('data-theme', 'light');
+    } else {
+      document.documentElement.removeAttribute('data-theme');
+    }
+    localStorage.setItem('mcu_theme', theme);
+  }, [theme]);
 
   // Filters
   const [filters, setFilters] = useState<FilterState>({
@@ -317,7 +332,7 @@ export default function App() {
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 antialiased font-sans">
       {/* Brand Header */}
-      <header className="bg-slate-900 text-white relative overflow-hidden border-b border-slate-850">
+      <header className="bg-slate-900 text-slate-50 relative overflow-hidden border-b border-slate-850">
         {/* Cinematic ambient background */}
         <div className="absolute inset-0 bg-radial-gradient-soft opacity-30 pointer-events-none" />
         
@@ -332,7 +347,7 @@ export default function App() {
                   MULTIVERSE CHRONICLE
                 </span>
               </div>
-              <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight font-display text-white">
+              <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight font-display text-slate-50">
                 MCU鑑賞ガイド <span className="text-red-500">&</span> 時系列トラッカー
               </h1>
               <p className="mt-2 text-sm text-slate-300 max-w-2xl leading-relaxed">
@@ -343,8 +358,17 @@ export default function App() {
 
             <div className="flex flex-wrap items-center gap-2 shrink-0">
               <button
+                onClick={() => setTheme(prev => prev === 'dark' ? 'light' : 'dark')}
+                className="flex items-center gap-1.5 px-3 py-2 bg-slate-800 text-slate-300 hover:text-slate-50 hover:bg-slate-700/80 rounded-xl text-xs font-semibold transition-all border border-slate-700 cursor-pointer"
+                title="ライト / ダークテーマの切り替え"
+              >
+                {theme === 'dark' ? <Sun className="w-3.5 h-3.5 text-amber-400" /> : <Moon className="w-3.5 h-3.5 text-slate-200" />}
+                {theme === 'dark' ? 'ライト' : 'ダーク'}モード
+              </button>
+              
+              <button
                 onClick={handleResetAll}
-                className="flex items-center gap-1.5 px-3 py-2 bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700/80 rounded-xl text-xs font-semibold transition-all border border-slate-700 cursor-pointer"
+                className="flex items-center gap-1.5 px-3 py-2 bg-slate-800 text-slate-300 hover:text-slate-50 hover:bg-slate-700/80 rounded-xl text-xs font-semibold transition-all border border-slate-700 cursor-pointer"
                 title="鑑賞状況と感想をすべて初期化する"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
@@ -367,7 +391,7 @@ export default function App() {
             onClick={() => setActiveTab('list')}
             className={`flex items-center gap-2 px-5 py-3 text-sm font-bold border-b-2 transition-all cursor-pointer ${
               activeTab === 'list'
-                ? 'border-red-650 text-white font-extrabold bg-slate-900/30 rounded-t-xl'
+                ? 'border-red-650 text-slate-50 font-extrabold bg-slate-900/30 rounded-t-xl'
                 : 'border-transparent text-slate-400 hover:text-slate-200'
             }`}
           >
@@ -378,7 +402,7 @@ export default function App() {
             onClick={() => setActiveTab('my-reviews')}
             className={`flex items-center gap-2 px-5 py-3 text-sm font-bold border-b-2 transition-all cursor-pointer ${
               activeTab === 'my-reviews'
-                ? 'border-red-650 text-white font-extrabold bg-slate-900/30 rounded-t-xl'
+                ? 'border-red-650 text-slate-50 font-extrabold bg-slate-900/30 rounded-t-xl'
                 : 'border-transparent text-slate-400 hover:text-slate-200'
             }`}
           >
@@ -389,7 +413,7 @@ export default function App() {
             onClick={() => setActiveTab('db-admin')}
             className={`flex items-center gap-2 px-5 py-3 text-sm font-bold border-b-2 transition-all cursor-pointer ${
               activeTab === 'db-admin'
-                ? 'border-red-650 text-white font-extrabold bg-slate-900/30 rounded-t-xl'
+                ? 'border-red-650 text-slate-50 font-extrabold bg-slate-900/30 rounded-t-xl'
                 : 'border-transparent text-slate-400 hover:text-slate-200'
             }`}
           >
@@ -400,7 +424,7 @@ export default function App() {
             onClick={() => setActiveTab('help')}
             className={`flex items-center gap-2 px-5 py-3 text-sm font-bold border-b-2 transition-all cursor-pointer ${
               activeTab === 'help'
-                ? 'border-red-650 text-white font-extrabold bg-slate-900/30 rounded-t-xl'
+                ? 'border-red-650 text-slate-50 font-extrabold bg-slate-900/30 rounded-t-xl'
                 : 'border-transparent text-slate-400 hover:text-slate-200'
             }`}
           >
@@ -438,7 +462,7 @@ export default function App() {
                       onClick={() => setSortOrder('release')}
                       className={`flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                         sortOrder === 'release'
-                          ? 'bg-slate-800 text-white shadow-md'
+                          ? 'bg-slate-800 text-slate-50 shadow-md'
                           : 'text-slate-400 hover:text-slate-200'
                       }`}
                     >
@@ -449,7 +473,7 @@ export default function App() {
                       onClick={() => setSortOrder('chrono')}
                       className={`flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                         sortOrder === 'chrono'
-                          ? 'bg-slate-800 text-white shadow-md'
+                          ? 'bg-slate-800 text-slate-50 shadow-md'
                           : 'text-slate-400 hover:text-slate-200'
                       }`}
                     >
@@ -485,8 +509,8 @@ export default function App() {
                     <div className="flex items-center gap-1 bg-slate-950 p-1.5 rounded-xl border border-slate-800">
                       <button
                         onClick={() => setViewMode('grid')}
-                        className={`p-1.5 rounded-lg text-slate-400 hover:text-white transition-all cursor-pointer ${
-                          viewMode === 'grid' ? 'bg-slate-800 text-white' : ''
+                        className={`p-1.5 rounded-lg text-slate-400 hover:text-slate-50 transition-all cursor-pointer ${
+                          viewMode === 'grid' ? 'bg-slate-800 text-slate-50' : ''
                         }`}
                         title="グリッド表示"
                       >
@@ -494,8 +518,8 @@ export default function App() {
                       </button>
                       <button
                         onClick={() => setViewMode('timeline')}
-                        className={`p-1.5 rounded-lg text-slate-400 hover:text-white transition-all cursor-pointer ${
-                          viewMode === 'timeline' ? 'bg-slate-800 text-white' : ''
+                        className={`p-1.5 rounded-lg text-slate-400 hover:text-slate-50 transition-all cursor-pointer ${
+                          viewMode === 'timeline' ? 'bg-slate-800 text-slate-50' : ''
                         }`}
                         title="タイムライン表示"
                       >
@@ -602,7 +626,7 @@ export default function App() {
                 <p className="text-slate-400 text-sm font-medium">該当する作品が見つかりませんでした。</p>
                 <button
                   onClick={handleResetFilters}
-                  className="px-4 py-2 bg-slate-850 text-white rounded-xl text-xs font-bold hover:bg-slate-800 transition-all cursor-pointer"
+                  className="px-4 py-2 bg-slate-850 text-slate-50 rounded-xl text-xs font-bold hover:bg-slate-800 transition-all cursor-pointer"
                 >
                   フィルターをリセットする
                 </button>
@@ -664,10 +688,10 @@ export default function App() {
                       >
                         {/* Timeline Node Ring */}
                         <div className={`absolute z-10 w-4 h-4 rounded-full border-4 ${
-                          isWatched ? 'bg-emerald-500 border-emerald-100' : 'bg-slate-300 border-white'
+                          isWatched ? 'bg-emerald-500 border-emerald-100' : 'bg-slate-300 border-slate-950'
                         } left-4 sm:left-1/2 -translate-x-1/2 hidden md:block`} />
                         <div className={`absolute z-10 w-4 h-4 rounded-full border-4 ${
-                          isWatched ? 'bg-emerald-500 border-emerald-100' : 'bg-slate-300 border-white'
+                          isWatched ? 'bg-emerald-500 border-emerald-100' : 'bg-slate-300 border-slate-950'
                         } left-6 -translate-x-1/2 md:hidden`} />
 
                         {/* Content Card container (spaced dynamically left or right) */}
@@ -768,7 +792,7 @@ export default function App() {
                   placeholder="感想、邦題/英題、あらすじ等で検索..."
                   value={reviewSearchQuery}
                   onChange={(e) => setReviewSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-8 py-2.5 bg-slate-900 border border-slate-850 focus:border-red-650/80 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-hidden transition-all shadow-inner"
+                  className="w-full pl-10 pr-8 py-2.5 bg-slate-900 border border-slate-850 focus:border-red-650/80 rounded-xl text-xs text-slate-50 placeholder-slate-500 focus:outline-hidden transition-all shadow-inner"
                 />
                 {reviewSearchQuery && (
                   <button

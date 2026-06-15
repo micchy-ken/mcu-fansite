@@ -61,7 +61,7 @@ export default function StatsSection({ items, reviews }: StatsSectionProps) {
         </div>
 
         <div className="flex items-baseline space-x-2 my-4">
-          <span className="text-5xl font-extrabold font-display text-white tracking-tight">
+          <span className="text-5xl font-extrabold font-display text-slate-50 tracking-tight">
             {overallPercent}%
           </span>
           <span className="text-sm font-semibold text-slate-400">
