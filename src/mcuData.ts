@@ -7,7 +7,7 @@ export interface McuItem {
   chronoOrder: number;
   chronoSetting: string;
   phase: number;
-  importance: 1 | 2 | 3; // 3: 必須(根幹), 2: 推奨(キャラ理解), 1: 補足(ファン向け)
+  importance: 1 | 2 | 3; // 3: 必須(根幹), 2: 推奨(キャラの理解), 1: 補足(ファン向け)
   importanceReason: string;
   synopsis: string;
   directorOrCreator: string;
