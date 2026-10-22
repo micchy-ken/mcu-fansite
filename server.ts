@@ -11,19 +11,6 @@ const PORT = 3000;
 
 app.use(express.json());
 
-// Initialize Gemini API
-const apiKey = process.env.GEMINI_API_KEY;
-const ai = apiKey
-  ? new GoogleGenAI({
-      apiKey,
-      httpOptions: {
-        headers: {
-          "User-Agent": "aistudio-build",
-        },
-      },
-    })
-  : null;
-
 // API Route to fetch latest MCU Works via Gemini & Search Grounding
 app.post("/api/fetch-official-mcu", async (req, res) => {
   const currentApiKey = process.env.GEMINI_API_KEY;
@@ -34,7 +21,7 @@ app.post("/api/fetch-official-mcu", async (req, res) => {
     });
   }
 
-  // Lazy initialize the Gemini client so it always picks up the latest key
+  // Lazy initialize Gemini client
   const dynamicAi = new GoogleGenAI({
     apiKey: currentApiKey,
     httpOptions: {
@@ -45,7 +32,6 @@ app.post("/api/fetch-official-mcu", async (req, res) => {
   });
 
   try {
-    // We will ask Gemini to fetch latest MCU schedule and movies/dramas
     const prompt = `
       Perform a Google Search to get the absolute latest, accurate list and schedules of Marvel Cinematic Universe (MCU) films, series, and specials slated for release or recently released (spanning from late 2024, 2025, 2026, 2027, to 2028 and beyond).
       This includes works like "Captain America: Brave New World", "Thunderbolts*", "The Fantastic Four: First Steps", "Avengers: Doomsday", "Avengers: Secret Wars", "Spider-Man 4", "Blade", "Ironheart", "Daredevil: Born Again", "Eyes of Wakanda", "Wonder Man", "Marvel Zombies", and any newly confirmed MCU projects.
@@ -84,19 +70,19 @@ app.post("/api/fetch-official-mcu", async (req, res) => {
               },
               releaseDate: {
                 type: Type.STRING,
-                description: "USA release or premiere date (YYYY-MM-DD. E.g., '2025-02-14'. If precise date isn't known, estimate a reasonable date in that month like '2026-05-01')"
+                description: "USA release or premiere date (YYYY-MM-DD. E.g., '2025-02-14')"
               },
               releaseOrder: {
                 type: Type.INTEGER,
-                description: "Estimated continuation count of publication order index. E.g., since currently there are about 45+ projects, the 2025 works start around 47, 48, etc."
+                description: "Estimated continuation count of publication order index."
               },
               chronoOrder: {
                 type: Type.INTEGER,
-                description: "Estimated storyline timeline sequence index. E.g., a high number such as 50+ matches modern chronological placements"
+                description: "Estimated storyline timeline sequence index."
               },
               chronoSetting: {
                 type: Type.STRING,
-                description: "Brief storyline timeline setting description in Japanese (e.g., '2025年（キャプテン・アメリカ新章の幕開け）')"
+                description: "Brief storyline timeline setting description in Japanese"
               },
               phase: {
                 type: Type.INTEGER,
@@ -104,15 +90,15 @@ app.post("/api/fetch-official-mcu", async (req, res) => {
               },
               importance: {
                 type: Type.INTEGER,
-                description: "Marvel Cinematic importance: 3 (Essential/Main story), 2 (Recommended/Character deep dive), 1 (Supplemental/Spin-off/Sp)"
+                description: "Marvel Cinematic importance: 3 (Essential), 2 (Recommended), 1 (Supplemental)"
               },
               importanceReason: {
                 type: Type.STRING,
-                description: "Short reasoning why this work holds importance in the MCU overarching narrative (in Japanese)"
+                description: "Short reasoning why this work holds importance in the MCU narrative (in Japanese)"
               },
               synopsis: {
                 type: Type.STRING,
-                description: "Clean, spoilers-free brief description or synopsis of the work (in Japanese)"
+                description: "Clean, spoilers-free brief description or synopsis (in Japanese)"
               },
               directorOrCreator: {
                 type: Type.STRING,
@@ -120,28 +106,28 @@ app.post("/api/fetch-official-mcu", async (req, res) => {
               },
               durationOrEpisodes: {
                 type: Type.STRING,
-                description: "Runtime or episode count (e.g., '2時間11分', '全9話', or '未定' if unknown)"
+                description: "Runtime or episode count (e.g., '2時間11分', '全9話', or '未定')"
               },
               officialUrl: {
                 type: Type.STRING,
-                description: "Official Marvel Disney JP or US movie promo website / Disney+ url if available, otherwise fallback to marvel.com webpage URL"
+                description: "Official Marvel Disney JP or US movie website URL"
               },
               explanationUrlQuery: {
                 type: Type.STRING,
-                description: "Recommended search query keywords in Japanese for users to lookup explanations/theories online"
+                description: "Recommended search query keywords in Japanese for users to lookup explanations"
               },
               heroIcon: {
                 type: Type.STRING,
-                description: "A single fitting emoji/symbol representing this work / the main hero (e.g., 🦅, ⚡, 🛡️, 🕷️, 💀)"
+                description: "A single fitting emoji/symbol representing this work"
               },
               accentColor: {
                 type: Type.STRING,
-                description: "Hex color code matching the work's theme (e.g., '#ef4444' for Red, '#3b82f6' for Blue)"
+                description: "Hex color code matching the work's theme"
               },
               characterIds: {
                 type: Type.ARRAY,
                 items: { type: Type.STRING },
-                description: "Listed character keys that are confirmed or expected to appear in this work (Choose from: 'sam_wilson', 'bucky_barnes', 'thaddeus_ross', 'peter_parker', 'stephen_strange', 'shuri', 'scott_lang', 'carol_danvers', 'kamala_khan', 'shang_chi', 'kate_bishop', 'marc_spector', 'matt_murdock', 'deadpool', 'wolverine', 'agatha_harkness', 'riri_williams', 'kingpin', 'reed_richards', 'doctor_doom', 'tony_stark', 'bruce_banner', 'loki', 'thor')"
+                description: "Listed character keys that appear in this work"
               }
             },
             required: [
@@ -160,7 +146,6 @@ app.post("/api/fetch-official-mcu", async (req, res) => {
     const parsedText = response.text || "[]";
     const rawItems = JSON.parse(parsedText);
     
-    // Parse response items and populate highly resilient defaults for any optional fields
     const items = rawItems.map((fetched: any, idx: number) => {
       const cleanId = fetched.id || `mcu_sync_${idx}_${Date.now().toString(36)}`;
       const titleJa = fetched.titleJa || "未定のMCU作品";
@@ -197,7 +182,7 @@ app.post("/api/fetch-official-mcu", async (req, res) => {
   }
 });
 
-// API Route to search a specific work and extract metadata from Gemini & Google Search
+// API Route to search a specific work and extract metadata from Gemini
 app.post("/api/search-mcu-work", async (req, res) => {
   const { query } = req.body;
   if (!query || typeof query !== "string" || !query.trim()) {
@@ -212,7 +197,6 @@ app.post("/api/search-mcu-work", async (req, res) => {
     });
   }
 
-  // Lazy initialize the Gemini client so it always picks up the latest key
   const dynamicAi = new GoogleGenAI({
     apiKey: currentApiKey,
     httpOptions: {
@@ -228,10 +212,10 @@ app.post("/api/search-mcu-work", async (req, res) => {
       
       Look up the official translation titles (Japanese and English), its release/premiere date (YYYY-MM-DD), category ('movie', 'drama', or 'special'), Phase (1 to 6), storyline timeline placement summary (Japanese), directors/creators, estimated runtime or episode counts, a short spoilers-free description/synopsis (Japanese), importance level (3=Essential, 2=Recommended, 1=Supplemental) and why it's important (Japanese).
       
-      Map the characters appearing in this work to their IDs if they are confirmed or expected to appear. Return character IDs from this whitelist ONLY:
+      Map the characters appearing in this work to their IDs. Return character IDs from this whitelist ONLY:
       ['tony_stark', 'steve_rogers', 'thor', 'bruce_banner', 'natasha_romanoff', 'clint_barton', 'nick_fury', 'loki', 'phil_colson', 'jane_foster', 'wanda_maximoff', 'vision', 'sam_wilson', 'bucky_barnes', 'james_rhodes', 'peter_parker', 'stephen_strange', 'wong', 't_challa', 'shuri', 'okoye', 'peter_quill', 'gamora', 'rocket', 'groot', 'dra_x', 'nebula', 'mantis', 'scott_lang', 'hope_van_dyne', 'carol_danvers', 'kamala_khan', 'shang_chi', 'kate_bishop', 'marc_spector', 'jennifer_walters', 'matt_murdock', 'deadpool', 'wolverine', 'agatha_harkness', 'thaddeus_ross', 'riri_williams', 'kingpin', 'reed_richards', 'doctor_doom']
 
-      Choose an appropriate single emoji representative parameter for 'heroIcon' (e.g., 🕸️, 🛡️, 🕷️, 💀), and an appropriate hex code for 'accentColor' based on the theme of this character/title.
+      Choose an appropriate single emoji representative parameter for 'heroIcon', and an appropriate hex code for 'accentColor'.
       
       Output MUST be a single JSON object corresponding to the required schema. Ensure titles, synopsis, chronoSetting, and importanceReason are written in Japanese.
     `;
@@ -247,7 +231,7 @@ app.post("/api/search-mcu-work", async (req, res) => {
           properties: {
             id: {
               type: Type.STRING,
-              description: "Unique string id using lowercase letters, numbers, and underscores (e.g., 'blade_mcu', 'spiderman_beyond_spiderverse', 'marvel_zombies')"
+              description: "Unique string id using lowercase letters, numbers, and underscores"
             },
             titleJa: {
               type: Type.STRING,
@@ -263,15 +247,15 @@ app.post("/api/search-mcu-work", async (req, res) => {
             },
             releaseDate: {
               type: Type.STRING,
-              description: "USA release/premiere date in YYYY-MM-DD format (if precise date is unknown, estimate a reasonable date in that month)"
+              description: "USA release/premiere date in YYYY-MM-DD format"
             },
             releaseOrder: {
               type: Type.INTEGER,
-              description: "Estimate sequence index of publication order relative to others (usually an integer between 45 and 65 for upcoming works)"
+              description: "Estimate sequence index of publication order"
             },
             chronoOrder: {
               type: Type.INTEGER,
-              description: "Estimate chronological sequence timeline order index relative to others (suggest 45 to 65)"
+              description: "Estimate chronological sequence timeline order index"
             },
             chronoSetting: {
               type: Type.STRING,
@@ -283,7 +267,7 @@ app.post("/api/search-mcu-work", async (req, res) => {
             },
             importance: {
               type: Type.INTEGER,
-              description: "MCU importance rating: 3 (Essential/Main), 2 (Recommended), 1 (Supplemental)"
+              description: "MCU importance rating: 3 (Essential), 2 (Recommended), 1 (Supplemental)"
             },
             importanceReason: {
               type: Type.STRING,
@@ -291,7 +275,7 @@ app.post("/api/search-mcu-work", async (req, res) => {
             },
             synopsis: {
               type: Type.STRING,
-              description: "Brief non-spoiler description/synopsis of the work in Japanese"
+              description: "Brief non-spoiler description/synopsis in Japanese"
             },
             directorOrCreator: {
               type: Type.STRING,
@@ -299,7 +283,7 @@ app.post("/api/search-mcu-work", async (req, res) => {
             },
             durationOrEpisodes: {
               type: Type.STRING,
-              description: "Run-time or episode count (e.g., '全6話' or '2時間10分' or '未定')"
+              description: "Run-time or episode count"
             },
             officialUrl: {
               type: Type.STRING,
@@ -307,7 +291,7 @@ app.post("/api/search-mcu-work", async (req, res) => {
             },
             explanationUrlQuery: {
               type: Type.STRING,
-              description: "Recommended search query keywords in Japanese for users to lookup explanations/theories online"
+              description: "Recommended search query keywords in Japanese"
             },
             heroIcon: {
               type: Type.STRING,
@@ -320,7 +304,7 @@ app.post("/api/search-mcu-work", async (req, res) => {
             characterIds: {
               type: Type.ARRAY,
               items: { type: Type.STRING },
-              description: "Expected characters list from the whitelist provided in the prompt"
+              description: "Expected characters list"
             }
           },
           required: [
@@ -338,7 +322,6 @@ app.post("/api/search-mcu-work", async (req, res) => {
     const parsedText = response.text || "{}";
     const fetched = JSON.parse(parsedText);
 
-    // Provide reliable defaults
     const finalItem = {
       id: fetched.id || `mcu_ai_${Date.now().toString(36)}`,
       titleJa: fetched.titleJa || query,
@@ -371,7 +354,6 @@ app.post("/api/search-mcu-work", async (req, res) => {
   }
 });
 
-// Serve Frontend using Vite Middleware (development) or Static Assets (production)
 async function startServer() {
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({
@@ -388,7 +370,7 @@ async function startServer() {
   }
 
   app.listen(PORT, "0.0.0.0", () => {
-    console.log(`Server running on port ${PORT}`);
+    console.log(`MCU Guide Server running on port ${PORT}`);
   });
 }
 

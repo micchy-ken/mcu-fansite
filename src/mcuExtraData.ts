@@ -7,8 +7,8 @@ export interface CharacterInfo {
 
 export interface ExtraItemData {
   heroIcon: string;      // 絵文字やシンボル
-  heroIconName: string;  // Lucideアイコン名（フォールバック用）
-  accentColor: string;   // テーマカラー (Tailwind border/text等で使用)
+  heroIconName: string;  // Icon motif
+  accentColor: string;   // テーマカラー
   characterIds: string[]; // 登場キャラクターのID
 }
 

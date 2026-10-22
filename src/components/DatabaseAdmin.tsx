@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { 
-  Plus, Trash2, Edit3, Save, RotateCcw, Download, Check, HelpCircle, AlertCircle, Database, ArrowUpRight, Sparkles, RefreshCw, X, Upload
+  Plus, Trash2, Edit3, Save, RotateCcw, Download, Check, AlertCircle, Database, Sparkles, RefreshCw, X, Upload
 } from 'lucide-react';
 import { mcuItems, McuItem } from '../mcuData';
 import { mcuExtraDataMap, ExtraItemData, charactersDb } from '../mcuExtraData';
@@ -31,7 +31,7 @@ interface DatabaseAdminProps {
   onSyncMasterData?: () => void;
 }
 
-export default function DatabaseAdmin({ items, extraMap, onUpdateDb, onResetDb, reviews, onUpdateReviews, onSyncMasterData }: DatabaseAdminProps) {
+export default function DatabaseAdmin({ items, extraMap, onUpdateDb, onResetDb, reviews, onUpdateReviews }: DatabaseAdminProps) {
   const [selectedId, setSelectedId] = useState<string>('');
   const [isEditing, setIsEditing] = useState(false);
   const [isAddingNew, setIsAddingNew] = useState(false);
@@ -70,11 +70,9 @@ export default function DatabaseAdmin({ items, extraMap, onUpdateDb, onResetDb, 
   const [formAccentColor, setFormAccentColor] = useState('#ef4444');
   const [formCharacterIds, setFormCharacterIds] = useState<string[]>([]);
 
-  // Single AI Search & Collect states
+  // AI Search states
   const [aiSearchQuery, setAiSearchQuery] = useState('');
   const [isSearchingAi, setIsSearchingAi] = useState(false);
-  const [aiSearchError, setAiSearchError] = useState<string | null>(null);
-  const [aiSearchSuccess, setAiSearchSuccess] = useState(false);
 
   // Live Official MCU Sync states
   const [isSyncing, setIsSyncing] = useState(false);
@@ -100,7 +98,6 @@ export default function DatabaseAdmin({ items, extraMap, onUpdateDb, onResetDb, 
       const data = await response.json();
       if (data.items && Array.isArray(data.items)) {
         setFetchedItems(data.items);
-        // Select newly added or updated IDs by default
         const idsToSelect: string[] = [];
         data.items.forEach((fetched: any) => {
           const existing = items.find(x => x.id === fetched.id);
@@ -134,10 +131,7 @@ export default function DatabaseAdmin({ items, extraMap, onUpdateDb, onResetDb, 
     setIsSyncing(true);
     setSyncError(null);
     try {
-      // Load curated official presets locally
       setFetchedItems(OFFICIAL_MCU_PRESETS);
-      
-      // Select newly added or updated IDs by default
       const idsToSelect: string[] = [];
       OFFICIAL_MCU_PRESETS.forEach((fetched: any) => {
         const existing = items.find(x => x.id === fetched.id);
@@ -158,7 +152,7 @@ export default function DatabaseAdmin({ items, extraMap, onUpdateDb, onResetDb, 
       setShowSyncModal(true);
     } catch (err: any) {
       console.error(err);
-      setSyncError('プリセットデータの解析中に予期せぬエラーが発生しました。');
+      setSyncError('プリセットデータの解析中にエラーが発生しました。');
     } finally {
       setIsSyncing(false);
     }
@@ -210,7 +204,7 @@ export default function DatabaseAdmin({ items, extraMap, onUpdateDb, onResetDb, 
 
     onUpdateDb(updatedItems, updatedExtraMap);
     setShowSyncModal(false);
-    alert(`公式スケジュール情報から、指定された ${appliedCount} 件の作品情報を同期・上書き適用しました！`);
+    alert(`公式スケジュール情報から、指定された ${appliedCount} 件の作品情報を同期適用しました！`);
   };
 
   const handleToggleSyncId = (id: string) => {
@@ -223,13 +217,11 @@ export default function DatabaseAdmin({ items, extraMap, onUpdateDb, onResetDb, 
 
   const handleSearchMcuWorkWithAi = async () => {
     if (!aiSearchQuery.trim()) {
-      alert('検索キーワード・作品名を入力してください（例: ブレイド MCU, スパイダーマン4, アーマーウォーズ）');
+      alert('検索キーワード・作品名を入力してください');
       return;
     }
     
     setIsSearchingAi(true);
-    setAiSearchError(null);
-    setAiSearchSuccess(false);
 
     try {
       const response = await fetch('/api/search-mcu-work', {
@@ -241,15 +233,12 @@ export default function DatabaseAdmin({ items, extraMap, onUpdateDb, onResetDb, 
       if (!response.ok) {
         const errData = await response.json().catch(() => ({}));
         const errMsg = errData.error || `HTTP error! status: ${response.status}`;
-        const errSol = errData.solution ? ` (${errData.solution})` : '';
-        throw new Error(`${errMsg}${errSol}`);
+        throw new Error(errMsg);
       }
 
       const data = await response.json();
       if (data.item) {
         const item = data.item;
-        
-        // Populate form states:
         setFormId(item.id);
         setFormTitleJa(item.titleJa);
         setFormTitleEn(item.titleEn);
@@ -270,14 +259,13 @@ export default function DatabaseAdmin({ items, extraMap, onUpdateDb, onResetDb, 
         setFormAccentColor(item.accentColor || '#ef4444');
         setFormCharacterIds(item.characterIds || []);
         
-        setAiSearchSuccess(true);
-        alert(`AIが作品「${item.titleJa}」の情報を収集しました！フォームに値が自動入力されました。ご確認ください。`);
+        alert(`AIが作品「${item.titleJa}」の情報を収集しました！`);
       } else {
-        throw new Error('AIが作品詳細情報を抽出できませんでした。キーワードを変更してお試しください。');
+        throw new Error('AIが作品詳細情報を抽出できませんでした。');
       }
     } catch (err: any) {
       console.error(err);
-      setAiSearchError(err.message || 'データ検索または解析に失敗しました。');
+      alert(`検索エラー: ${err.message || err}`);
     } finally {
       setIsSearchingAi(false);
     }
@@ -291,7 +279,6 @@ export default function DatabaseAdmin({ items, extraMap, onUpdateDb, onResetDb, 
     setIsAddingNew(false);
     setIsEditing(true);
 
-    // Populate regular form fields
     setFormId(work.id);
     setFormTitleJa(work.titleJa);
     setFormTitleEn(work.titleEn);
@@ -309,7 +296,6 @@ export default function DatabaseAdmin({ items, extraMap, onUpdateDb, onResetDb, 
     setFormOfficialUrl(work.officialUrl || '');
     setFormExplanationUrlQuery(work.explanationUrlQuery || '');
 
-    // Populate extra fields
     const extra = extraMap[work.id] || {
       heroIcon: '🎬',
       heroIconName: 'Film',
@@ -326,12 +312,9 @@ export default function DatabaseAdmin({ items, extraMap, onUpdateDb, onResetDb, 
     setIsEditing(true);
     setSelectedId('');
 
-    // Generate maximum orders to make addition easy
-    
     const maxChrono = items.reduce((max, item) => Math.max(max, item.chronoOrder), 0) + 1;
     const maxPhase = items.reduce((max, item) => Math.max(max, item.phase), 0) || 5;
 
-    // Reset fields to defaults
     setFormId('');
     setFormTitleJa('');
     setFormTitleEn('');
@@ -375,7 +358,7 @@ export default function DatabaseAdmin({ items, extraMap, onUpdateDb, onResetDb, 
     const cleanId = formId.trim().toLowerCase().replace(/[^a-z0-9_]/g, '');
 
     if (isAddingNew && items.some(item => item.id === cleanId)) {
-      alert(`ID "${cleanId}" はすでに他の作品で使われています。別のIDを入力してください。`);
+      alert(`ID "${cleanId}" はすでに使われています。別のIDを入力してください。`);
       return;
     }
 
@@ -430,7 +413,7 @@ export default function DatabaseAdmin({ items, extraMap, onUpdateDb, onResetDb, 
   };
 
   const handleDelete = (id: string) => {
-    if (!window.confirm('この作品をデータベースから完全に削除してもよろしいですか？')) {
+    if (!window.confirm('この作品をデータベースから削除してもよろしいですか？')) {
       return;
     }
 
@@ -467,7 +450,7 @@ export default function DatabaseAdmin({ items, extraMap, onUpdateDb, onResetDb, 
       setTimeout(() => setExportCopied(false), 3000);
     } catch (err) {
       console.error('Clipboard copy failed:', err);
-      alert('クリップボードへのコピーに失敗しました。下記のエリアから手動で全選択コピーしてください。');
+      alert('クリップボードへのコピーに失敗しました。');
     }
   };
 
@@ -489,7 +472,7 @@ export default function DatabaseAdmin({ items, extraMap, onUpdateDb, onResetDb, 
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
     } catch (err: any) {
-      alert(`ファイル保存の作成に失敗しました: ${err.message || err}`);
+      alert(`ファイル保存に失敗しました: ${err.message || err}`);
     }
   };
 
@@ -520,44 +503,12 @@ export default function DatabaseAdmin({ items, extraMap, onUpdateDb, onResetDb, 
       const reviewsSource = parsed.reviews || parsed.mcu_user_reviews;
 
       if (reviewsSource && typeof reviewsSource === 'object' && !Array.isArray(reviewsSource)) {
-        const keys = Object.keys(reviewsSource);
-        const looksLikeReviews = keys.length === 0 || keys.every(k => {
-          const v = reviewsSource[k];
-          return v && (typeof v.watched === 'boolean' || v.rating !== undefined || typeof v.notes === 'string');
-        });
-        if (looksLikeReviews) {
-          targetReviews = reviewsSource;
-          importedReviewsCount = keys.length;
-        }
-      } else if (!targetDbItems) {
-        const keys = Object.keys(parsed);
-        if (keys.length > 0) {
-          const looksLikeRawReviews = keys.every(k => {
-            const v = parsed[k];
-            return v && (typeof v.watched === 'boolean' || v.rating !== undefined || typeof v.notes === 'string');
-          });
-          if (looksLikeRawReviews) {
-            targetReviews = parsed as UserReviewsState;
-            importedReviewsCount = keys.length;
-          }
-        }
+        targetReviews = reviewsSource;
+        importedReviewsCount = Object.keys(reviewsSource).length;
       }
 
       if (!targetDbItems && !targetReviews) {
-        throw new Error('インポート対象のデータが見つかりませんでした。エクスポートしたJSONファイルである必要があります。');
-      }
-
-      let confirmMsg = '以下のデータを既存データにマージして現在の環境にインポートしますか？\n\n';
-      if (targetDbItems) {
-        confirmMsg += `・作品データベース定義: ${importedDbCount} 件\n`;
-      }
-      if (targetReviews) {
-        confirmMsg += `・マイ個人感想・鑑賞記録: ${importedReviewsCount} 件\n`;
-      }
-      confirmMsg += '\n※既に同じIDのアイテムが存在する場合はインポートデータで上書きされます。\n続行してよろしいですか？';
-
-      if (!window.confirm(confirmMsg)) {
-        return;
+        throw new Error('インポート対象のデータが見つかりませんでした。');
       }
 
       if (targetDbItems) {
@@ -597,16 +548,13 @@ export default function DatabaseAdmin({ items, extraMap, onUpdateDb, onResetDb, 
         });
       }
 
-      let successMsg = 'データのインポートが正常に完了しました！\n';
-      if (targetDbItems) successMsg += `・カスタム作品データベース: ${importedDbCount}件をインポートしました。\n`;
-      if (targetReviews) successMsg += `・マイ感想・鑑賞履歴: ${importedReviewsCount}件を復元・マージしました。\n`;
-
+      const successMsg = `インポート完了: 作品 ${importedDbCount}件 / レビュー ${importedReviewsCount}件`;
       setImportSuccessMessage(successMsg);
       setImportJsonText('');
       alert(successMsg);
     } catch (e: any) {
       console.error('Import process failed:', e);
-      setImportError(`インポートに失敗しました: ${e.message || 'JSONフォーマットが間違っているか、ファイルが破損している可能性があります。'}`);
+      setImportError(`インポート失敗: ${e.message || 'JSONフォーマットが不正です。'}`);
     }
   };
 
@@ -625,36 +573,9 @@ export default function DatabaseAdmin({ items, extraMap, onUpdateDb, onResetDb, 
     }
   };
 
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(true);
-  };
-
-  const handleDragLeave = () => {
-    setIsDragging(false);
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-    const file = e.dataTransfer.files?.[0];
-    if (!file) return;
-
-    if (!file.name.endsWith('.json')) {
-      setImportError('JSONファイル（.json）をドロップしてください。');
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const text = event.target?.result as string;
-      processImportJson(text);
-    };
-    reader.readAsText(file);
-  };
-
   return (
     <div className="space-y-6">
+      {/* Top Banner */}
       <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
         <div className="flex items-start gap-4">
           <div className="bg-red-950/40 p-3 rounded-xl border border-red-900/30 text-red-500">
@@ -663,328 +584,56 @@ export default function DatabaseAdmin({ items, extraMap, onUpdateDb, onResetDb, 
           <div className="space-y-1 flex-1">
             <h3 className="text-lg font-bold text-slate-200">MCUデータベース・カスタマイザー</h3>
             <p className="text-sm text-slate-400 leading-relaxed font-sans">
-              MCUの作品名や公開スケジュールを編集・追加するための開発パネルです。
-              例えば、映画『アベンジャーズ：ドゥームズデイ』の日程を変更（後倒しなど）すると、タイムラインや統計情報、アベンジャーズの相関キャラクター関係がリアルタイムで自動更新されます。
-              新たにお気に入りの作品情報が公式に発表された場合にも、ここから自由に追加できます。
+              MCU作品の公開日、重要度、あらすじ、登場ヒーローの追加・編集が行えます。
             </p>
             <div className="flex flex-wrap items-center gap-3 pt-3">
               <button
                 type="button"
-                onClick={handlePrepareAddNew}
-                className="inline-flex items-center gap-1.5 px-4 py-2 bg-red-650 hover:bg-red-550 text-white rounded-xl text-xs font-bold transition-all cursor-pointer shadow-md"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                新しい作品を追加する
-              </button>
-              <button
-                type="button"
-                onClick={handlePresetSync}
-                disabled={isSyncing}
-                className="inline-flex items-center gap-1.5 px-4 py-2 bg-slate-800 hover:bg-slate-750 text-amber-400 hover:text-amber-300 rounded-xl text-xs font-bold transition-all border border-amber-500/30 cursor-pointer shadow-md"
-                title="Google APIキー不要、オフライン動作可能なローカル公式最新データを一括ロードします"
-              >
-                <Check className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                公式プリセットから同期 (高速・API不要)
-              </button>
-              <button
-                type="button"
-                onClick={handleFetchOfficialMcu}
-                disabled={isSyncing}
-                className="inline-flex items-center gap-1.5 px-4 py-2 bg-amber-600 hover:bg-amber-500 disabled:bg-amber-800 disabled:opacity-50 text-white rounded-xl text-xs font-bold transition-all cursor-pointer shadow-md"
-                title="Gemini AIを使って、最新のディズニー/マーベル公式サイト等のスケジュール更新情報をWebからディープ検索して同期します"
-              >
-                {isSyncing ? (
-                  <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                ) : (
-                  <Sparkles className="w-3.5 h-3.5" />
-                )}
-                {isSyncing ? '公式スケジュールを収集中...' : '最新情報をAI検索同期 (要APIキー)'}
-              </button>
-              <button
-                type="button"
-                onClick={() => setShowJsonExport(!showJsonExport)}
-                className="inline-flex items-center gap-1.5 px-4 py-2 bg-slate-800 hover:bg-slate-755 hover:text-slate-50 text-slate-300 rounded-xl text-xs font-bold transition-all border border-slate-700 cursor-pointer"
-              >
-                <Download className="w-3.5 h-3.5" />
-                データのエクスポート/バックアップ
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  if (window.confirm('データベースを最初のデフォルト状態にリセットします。\n※これまでこのパネルで追加・編集したすべてのカスタム作品データおよび公開日等の変更が取り消されます。鑑賞履歴や感想は消えません。')) {
-                    onResetDb();
-                    setIsEditing(false);
-                    setSelectedId('');
-                    alert('データベースをリセットしました。');
-                  }
-                }}
-                className="inline-flex items-center gap-1.5 px-3 py-2 bg-slate-950 hover:bg-slate-900 text-slate-500 hover:text-slate-300 rounded-xl text-xs font-bold transition-all border border-slate-900 cursor-pointer ml-auto"
-                title="デフォルトデータベースに戻す"
-              >
-                <RotateCcw className="w-3.5 h-3.5" />
-                初期デフォルトに戻す
-              </button>
-            </div>
-
-            {syncError && (
-              <div className="mt-3 p-3 bg-red-950/40 border border-red-900/30 rounded-xl flex items-center gap-2 text-xs text-red-400 font-sans">
-                <AlertCircle className="w-4 h-4 text-red-500 shrink-0" />
-                <span>{syncError}</span>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Backup/Import Panel */}
-        {showJsonExport && (
-          <div className="mt-5 p-5 bg-slate-950 border border-slate-850 rounded-2xl space-y-4 animate-fade-in text-left">
-            {/* Tab navigation */}
-            <div className="flex border-b border-slate-850 pb-2.5">
-              <button
-                type="button"
-                onClick={() => setBackupTab('export')}
-                className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all duration-200 cursor-pointer relative ${
-                  backupTab === 'export'
-                    ? 'text-amber-400 bg-slate-900 border border-slate-850'
-                    : 'text-slate-400 hover:text-slate-200'
-                }`}
-              >
-                エクスポート (保存・バックアップ)
-              </button>
-              <button
-                type="button"
-                onClick={() => setBackupTab('import')}
-                className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all duration-200 cursor-pointer relative ${
-                  backupTab === 'import'
-                    ? 'text-amber-400 bg-slate-900 border border-slate-850'
-                    : 'text-slate-400 hover:text-slate-200'
-                }`}
-              >
-                インポート (復元・読み込み)
-              </button>
-            </div>
-
-            {/* Export Tab View */}
-            {backupTab === 'export' ? (
-              <div className="space-y-4">
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-                  <span className="text-xs font-bold text-slate-300 flex items-center gap-1.5 font-sans">
-                    <Check className="w-4 h-4 text-emerald-500 animate-pulse" />
-                    エクスポート対象のデータ選択
-                  </span>
-                  
-                  <div className="flex items-center gap-1 bg-slate-900 p-1 rounded-xl border border-slate-850">
-                    <button
-                      type="button"
-                      onClick={() => setActiveExportType('all')}
-                      className={`px-2.5 py-1 rounded-lg text-[10px] font-bold cursor-pointer transition-all ${
-                        activeExportType === 'all' ? 'bg-amber-500 text-slate-950' : 'text-slate-400 hover:text-slate-200'
-                      }`}
-                    >
-                      すべて (推奨)
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setActiveExportType('db')}
-                      className={`px-2.5 py-1 rounded-lg text-[10px] font-bold cursor-pointer transition-all ${
-                        activeExportType === 'db' ? 'bg-amber-500 text-slate-950' : 'text-slate-400 hover:text-slate-200'
-                      }`}
-                    >
-                      作品DBのみ
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setActiveExportType('reviews')}
-                      className={`px-2.5 py-1 rounded-lg text-[10px] font-bold cursor-pointer transition-all ${
-                        activeExportType === 'reviews' ? 'bg-amber-500 text-slate-950' : 'text-slate-400 hover:text-slate-200'
-                      }`}
-                    >
-                      マイ感想・履歴のみ
-                    </button>
-                  </div>
-                </div>
-
-                <p className="text-[10px] text-slate-500 leading-relaxed font-sans">
-                  ※お好みのデータを選択してバックアップファイルに保存するか、クリップボードの内容をテキストとして控えることができます。
-                </p>
-
-                <textarea
-                  readOnly
-                  value={JSON.stringify(getExportData(), null, 2)}
-                  rows={6}
-                  className="w-full bg-slate-900 text-[11px] font-mono text-emerald-400 border border-slate-850 rounded-xl p-3 outline-none"
-                  onClick={(e) => (e.target as HTMLTextAreaElement).select()}
-                  title="クリックして全選択"
-                />
-
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 pt-2 font-sans">
-                  <p className="text-[10px] text-slate-500 leading-relaxed max-w-xl">
-                    💡 **ヒント：** バックアップしたファイルを大切に保管してください。
-                    キャッシュクリアでデータが消えても、隣の「インポート」タブからいつでも元の状態に復元可能です。
-                  </p>
-                  <div className="flex gap-2 shrink-0 w-full sm:w-auto">
-                    <button
-                      type="button"
-                      onClick={handleExportJson}
-                      className={`flex-1 sm:flex-none px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                        exportCopied ? 'bg-emerald-600 text-white' : 'bg-slate-850 hover:bg-slate-800 text-slate-200 border border-slate-750'
-                      }`}
-                    >
-                      {exportCopied ? 'コピー完了！' : 'クリップボードにコピー'}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleDownloadBackupFile}
-                      className="flex-1 sm:flex-none px-4 py-2 bg-slate-800 hover:bg-slate-750 text-amber-400 hover:text-amber-300 rounded-xl text-xs font-bold transition-all border border-amber-500/30 cursor-pointer flex items-center justify-center gap-1.5"
-                    >
-                      <Download className="w-3.5 h-3.5" />
-                      ファイルでダウンロード
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {/* Drag and Drop Zone */}
-                <div
-                  onDragOver={handleDragOver}
-                  onDragLeave={handleDragLeave}
-                  onDrop={handleDrop}
-                  onClick={() => fileInputRef.current?.click()}
-                  className={`border-2 border-dashed rounded-2xl p-6 text-center cursor-pointer transition-all ${
-                    isDragging
-                      ? 'border-amber-500 bg-amber-950/20 text-amber-400'
-                      : 'border-slate-850 bg-slate-900/50 text-slate-400 hover:bg-slate-900 hover:border-slate-700'
-                  }`}
-                >
-                  <input
-                    type="file"
-                    ref={fileInputRef}
-                    onChange={handleFileUpload}
-                    accept=".json"
-                    className="hidden"
-                  />
-                  <div className="flex flex-col items-center gap-2 font-sans">
-                    <Upload className="w-8 h-8 text-slate-500 mb-1" />
-                    <p className="text-xs font-bold text-slate-300">
-                      ここにバックアップした JSON ファイルをドラッグ&ドロップ
-                    </p>
-                    <p className="text-[10px] text-slate-500">
-                      または、ここをクリックしてパソコンからファイルを選択 (.json)
-                    </p>
-                  </div>
-                </div>
-
-                {/* Paste fallback */}
-                <div className="space-y-1.5 font-sans">
-                  <label className="text-[11px] font-bold text-slate-400 block">
-                    または、コピーしたバックアップJSONテキストを直接貼り付け：
-                  </label>
-                  <textarea
-                    placeholder="ここにエクスポートしたJSONデータを貼り付けてください..."
-                    value={importJsonText}
-                    onChange={(e) => setImportJsonText(e.target.value)}
-                    rows={4}
-                    className="w-full bg-slate-900 text-[11px] font-mono text-slate-300 border border-slate-850 rounded-xl p-3 outline-none focus:border-slate-700"
-                  />
-                </div>
-
-                {importError && (
-                  <div className="p-3 bg-red-950/30 border border-red-900/30 rounded-xl text-xs text-red-400 leading-relaxed flex items-start gap-1.5 font-sans">
-                    <AlertCircle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
-                    <span>{importError}</span>
-                  </div>
-                )}
-
-                {importSuccessMessage && (
-                  <div className="p-3 bg-emerald-950/30 border border-emerald-950/50 rounded-xl text-xs text-emerald-400 leading-relaxed flex items-start gap-1.5 font-sans">
-                    <Check className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
-                    <span className="whitespace-pre-line">{importSuccessMessage}</span>
-                  </div>
-                )}
-
-                <div className="flex justify-end pt-1">
-                  <button
-                    type="button"
-                    onClick={() => processImportJson(importJsonText)}
-                    disabled={!importJsonText.trim()}
-                    className="w-full sm:w-auto px-6 py-2.5 bg-gradient-to-r from-red-650 to-amber-600 hover:from-red-550 hover:to-amber-500 disabled:opacity-40 text-white rounded-xl text-xs font-bold transition-all cursor-pointer shadow-md flex items-center justify-center gap-2"
-                  >
-                    <Check className="w-4 h-4" />
-                    <span>貼り付けたデータをインポートする</span>
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-      {false && (
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
-        <div className="flex items-start gap-4">
-          <div className="bg-red-950/40 p-3 rounded-xl border border-red-900/30 text-red-500">
-            <Database className="w-6 h-6" />
-          </div>
-          <div className="space-y-1 flex-1">
-            <h3 className="text-lg font-bold text-slate-200">MCUデータベース・カスタマイザー</h3>
-            <p className="text-sm text-slate-400 leading-relaxed">
-              MCUの作品名や公開スケジュールを編集・追加するための開発パネルです。
-              例えば、映画『アベンジャーズ：ドゥームズデイ』の日程を変更（後倒しなど）すると、タイムラインや統計情報、アベンジャーズの相関キャラクター関係がリアルタイムで自動更新されます。
-              新たにお気に入りの作品情報が公式に発表された場合にも、ここから自由に追加できます。
-            </p>
-            <div className="flex flex-wrap items-center gap-3 pt-3">
-              <button
                 onClick={handlePrepareAddNew}
                 className="inline-flex items-center gap-1.5 px-4 py-2 bg-red-600 hover:bg-red-500 text-white rounded-xl text-xs font-bold transition-all cursor-pointer shadow-md"
               >
                 <Plus className="w-3.5 h-3.5" />
-                新しい作品を追加する
+                新しい作品を追加
               </button>
               <button
                 type="button"
                 onClick={handlePresetSync}
                 disabled={isSyncing}
                 className="inline-flex items-center gap-1.5 px-4 py-2 bg-slate-800 hover:bg-slate-750 text-amber-400 hover:text-amber-300 rounded-xl text-xs font-bold transition-all border border-amber-500/30 cursor-pointer shadow-md"
-                title="Google APIキー不要、オフライン動作可能なローカル公式最新データを一括ロードします"
               >
                 <Check className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                公式プリセットから同期 (高速・API不要)
+                公式プリセットから同期
               </button>
               <button
                 type="button"
                 onClick={handleFetchOfficialMcu}
                 disabled={isSyncing}
-                className="inline-flex items-center gap-1.5 px-4 py-2 bg-amber-600 hover:bg-amber-500 disabled:bg-amber-800 disabled:opacity-50 text-white rounded-xl text-xs font-bold transition-all cursor-pointer shadow-md"
-                title="Gemini AIを使って、最新のディズニー/マーベル公式サイト等のスケジュール更新情報をWebからディープ検索して同期します"
+                className="inline-flex items-center gap-1.5 px-4 py-2 bg-amber-600 hover:bg-amber-500 disabled:opacity-50 text-white rounded-xl text-xs font-bold transition-all cursor-pointer shadow-md"
               >
-                {isSyncing ? (
-                  <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                ) : (
-                  <Sparkles className="w-3.5 h-3.5" />
-                )}
-                {isSyncing ? '公式スケジュールを収集中...' : '最新情報をAI検索同期 (要APIキー)'}
+                {isSyncing ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+                {isSyncing ? '取得中...' : '最新情報をAI検索同期 (要APIキー)'}
               </button>
               <button
+                type="button"
                 onClick={() => setShowJsonExport(!showJsonExport)}
-                className="inline-flex items-center gap-1.5 px-4 py-2 bg-slate-800 hover:bg-slate-700 hover:text-slate-50 text-slate-300 rounded-xl text-xs font-bold transition-all border border-slate-700 cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-4 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs font-bold transition-all border border-slate-700 cursor-pointer"
               >
                 <Download className="w-3.5 h-3.5" />
-                データのエクスポート/バックアップ
+                エクスポート/インポート
               </button>
               <button
+                type="button"
                 onClick={() => {
-                  if (window.confirm('データベースを最初のデフォルト状態にリセットします。\n※これまでこのパネルで追加・編集したすべてのカスタム作品データおよび公開日等の変更が取り消されます。鑑賞履歴や感想は消えません。')) {
+                  if (window.confirm('初期状態に戻しますか？')) {
                     onResetDb();
                     setIsEditing(false);
                     setSelectedId('');
-                    alert('データベースをリセットしました。');
                   }
                 }}
-                className="inline-flex items-center gap-1.5 px-3 py-2 bg-slate-950 hover:bg-slate-900 text-slate-500 hover:text-slate-300 rounded-xl text-xs font-bold transition-all border border-slate-900 cursor-pointer ml-auto"
-                title="デフォルトデータベースに戻す"
+                className="inline-flex items-center gap-1.5 px-3 py-2 bg-slate-950 text-slate-500 hover:text-slate-300 rounded-xl text-xs font-bold transition-all border border-slate-900 cursor-pointer ml-auto"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
-                初期デフォルトに戻す
+                初期状態に戻す
               </button>
             </div>
 
@@ -997,437 +646,278 @@ export default function DatabaseAdmin({ items, extraMap, onUpdateDb, onResetDb, 
           </div>
         </div>
 
-        {/* JSON Export Overlay Output */}
+        {/* Backup Panel */}
         {showJsonExport && (
-          <div className="mt-5 p-4 bg-slate-950 border border-slate-850 rounded-xl space-y-3 animate-fade-in text-left">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-slate-400 flex items-center gap-1.5">
-                <AlertCircle className="w-4 h-4 text-amber-500" />
-                お使いのカスタムデータ（JSON形式・クリップボードにコピーできます）
-              </span>
+          <div className="mt-5 p-5 bg-slate-950 border border-slate-850 rounded-2xl space-y-4 text-left">
+            <div className="flex border-b border-slate-850 pb-2.5 gap-2">
               <button
-                onClick={handleExportJson}
-                className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                  exportCopied ? 'bg-emerald-600 text-white' : 'bg-slate-800 hover:bg-slate-700 text-slate-200'
-                }`}
+                type="button"
+                onClick={() => setBackupTab('export')}
+                className={`px-4 py-1.5 rounded-lg text-xs font-bold cursor-pointer ${backupTab === 'export' ? 'text-amber-400 bg-slate-900' : 'text-slate-400'}`}
               >
-                {exportCopied ? 'コピー完了！' : 'クリップボードにコピー'}
+                エクスポート (保存)
+              </button>
+              <button
+                type="button"
+                onClick={() => setBackupTab('import')}
+                className={`px-4 py-1.5 rounded-lg text-xs font-bold cursor-pointer ${backupTab === 'import' ? 'text-amber-400 bg-slate-900' : 'text-slate-400'}`}
+              >
+                インポート (復元)
               </button>
             </div>
-            <p className="text-[10px] text-slate-500 leading-relaxed">
-              ※今後MCU作品が何件も更新された際、このJSONを保存しておけば、ブラウザのキャッシュ（localStorage）が不意に消えても元に戻せます。また、プログラムの <code>/src/mcuData.ts</code> や <code>/src/mcuExtraData.ts</code> にマージしてアプリへコミットすることで、更新作業が完了します。
-            </p>
-            <textarea
-              readOnly
-              value={JSON.stringify({ mcuItems: items, mcuExtraDataMap: extraMap }, null, 2)}
-              rows={8}
-              className="w-full bg-slate-900 text-[11px] font-mono text-emerald-400 border border-slate-850 rounded-lg p-3 outline-none"
-            />
+
+            {backupTab === 'export' ? (
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <div className="flex gap-1 bg-slate-900 p-1 rounded-xl border border-slate-850">
+                    <button
+                      type="button"
+                      onClick={() => setActiveExportType('all')}
+                      className={`px-2.5 py-1 rounded-lg text-[10px] font-bold cursor-pointer ${activeExportType === 'all' ? 'bg-amber-500 text-slate-950' : 'text-slate-400'}`}
+                    >
+                      すべて
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setActiveExportType('db')}
+                      className={`px-2.5 py-1 rounded-lg text-[10px] font-bold cursor-pointer ${activeExportType === 'db' ? 'bg-amber-500 text-slate-950' : 'text-slate-400'}`}
+                    >
+                      作品DBのみ
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setActiveExportType('reviews')}
+                      className={`px-2.5 py-1 rounded-lg text-[10px] font-bold cursor-pointer ${activeExportType === 'reviews' ? 'bg-amber-500 text-slate-950' : 'text-slate-400'}`}
+                    >
+                      感想のみ
+                    </button>
+                  </div>
+                </div>
+
+                <textarea
+                  readOnly
+                  value={JSON.stringify(getExportData(), null, 2)}
+                  rows={6}
+                  className="w-full bg-slate-900 text-[11px] font-mono text-emerald-400 border border-slate-850 rounded-xl p-3 outline-none"
+                  onClick={(e) => (e.target as HTMLTextAreaElement).select()}
+                />
+
+                <div className="flex justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={handleExportJson}
+                    className="px-4 py-2 bg-slate-800 text-slate-200 rounded-xl text-xs font-bold cursor-pointer"
+                  >
+                    {exportCopied ? 'コピー完了！' : 'クリップボードにコピー'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleDownloadBackupFile}
+                    className="px-4 py-2 bg-amber-600 text-white rounded-xl text-xs font-bold cursor-pointer"
+                  >
+                    JSONファイルで保存
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div
+                  onClick={() => fileInputRef.current?.click()}
+                  className="border-2 border-dashed border-slate-800 bg-slate-900 rounded-2xl p-6 text-center cursor-pointer text-slate-400"
+                >
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleFileUpload}
+                    accept=".json"
+                    className="hidden"
+                  />
+                  <Upload className="w-8 h-8 mx-auto mb-2 text-slate-500" />
+                  <p className="text-xs font-bold text-slate-300">JSONファイルをアップロード</p>
+                </div>
+
+                <textarea
+                  placeholder="またはJSONテキストを貼り付け..."
+                  value={importJsonText}
+                  onChange={(e) => setImportJsonText(e.target.value)}
+                  rows={4}
+                  className="w-full bg-slate-900 text-[11px] font-mono text-slate-300 border border-slate-850 rounded-xl p-3 outline-none"
+                />
+
+                {importError && (
+                  <div className="p-3 bg-red-950/30 text-xs text-red-400 rounded-xl">
+                    {importError}
+                  </div>
+                )}
+                {importSuccessMessage && (
+                  <div className="p-3 bg-emerald-950/30 text-xs text-emerald-400 rounded-xl">
+                    {importSuccessMessage}
+                  </div>
+                )}
+
+                <div className="flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => processImportJson(importJsonText)}
+                    disabled={!importJsonText.trim()}
+                    className="px-6 py-2 bg-amber-600 disabled:opacity-40 text-white rounded-xl text-xs font-bold cursor-pointer"
+                  >
+                    インポート実行
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
-      )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        {/* Left: Works selector list (4 cols) */}
-        <div className="col-span-1 lg:col-span-4 bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl space-y-4 max-h-[650px] overflow-y-auto">
-          <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-            <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider font-mono">
-              作品リスト ({items.length}件)
-            </h4>
-            <span className="text-[10px] px-1.5 py-0.5 rounded font-bold font-mono bg-slate-850 text-slate-400">
-              タップして編集
-            </span>
-          </div>
-
-          <div className="space-y-1">
-            {items
-              .slice()
-              .sort((a, b) => b.phase - a.phase || new Date(b.releaseDate).getTime() - new Date(a.releaseDate).getTime())
-              .map(work => {
-                const extra = extraMap[work.id] || { heroIcon: '🎬', accentColor: '#475569' };
-                const isSelected = work.id === selectedId;
-
-                return (
-                  <button
-                    key={work.id}
-                    onClick={() => handleSelectWork(work.id)}
-                    className={`w-full text-left p-2.5 rounded-xl transition-all cursor-pointer flex items-center gap-3 border ${
-                      isSelected 
-                        ? 'bg-slate-800 border-red-500/80 shadow-md translate-x-1' 
-                        : 'bg-transparent border-transparent hover:bg-slate-850/60'
-                    }`}
-                  >
-                    <span 
-                      className="w-8 h-8 rounded-lg flex items-center justify-center text-base shrink-0 border"
-                      style={{ 
-                        backgroundColor: `${extra.accentColor}15`, 
-                        borderColor: `${extra.accentColor}40`
-                      }}
-                    >
-                      {extra.heroIcon}
-                    </span>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between gap-1">
-                        <span className="text-[9px] font-mono font-bold text-slate-500 uppercase">
-                          PHASE {work.phase}
-                        </span>
-                        <span className="text-[10px] text-slate-400 font-mono">
-                          {work.releaseDate.split('-')[0]}
-                        </span>
-                      </div>
-                      <h5 className="text-xs font-bold text-slate-300 truncate mt-0.5">
-                        {work.titleJa}
-                      </h5>
-                    </div>
-                  </button>
-                );
-              })}
+      {/* Main Grid: Select work on left, Edit form on right */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Left: Work list */}
+        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 max-h-[600px] overflow-y-auto custom-scrollbar">
+          <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 px-1">
+            登録作品一覧 ({items.length}件)
+          </h4>
+          <div className="space-y-1.5">
+            {items.map(item => {
+              const isSelected = selectedId === item.id && !isAddingNew;
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => handleSelectWork(item.id)}
+                  className={`w-full text-left p-2.5 rounded-xl border text-xs transition-all cursor-pointer flex items-center justify-between ${
+                    isSelected
+                      ? 'bg-red-950/40 border-red-500/50 text-slate-100 font-bold'
+                      : 'bg-slate-950 border-slate-850 text-slate-300 hover:border-slate-700'
+                  }`}
+                >
+                  <div className="truncate mr-2">
+                    <span className="block truncate">{item.titleJa}</span>
+                    <span className="text-[10px] text-slate-500 font-mono">{item.releaseDate}</span>
+                  </div>
+                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-900 text-slate-400 border border-slate-800 shrink-0">
+                    P{item.phase}
+                  </span>
+                </button>
+              );
+            })}
           </div>
         </div>
 
-        {/* Right: Work editing details form (8 cols) */}
-        <div className="col-span-1 lg:col-span-8 bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl min-h-[500px]">
-          {!isEditing ? (
-            <div className="h-[460px] flex flex-col items-center justify-center text-center p-8 space-y-4">
-              <div className="w-16 h-16 rounded-full bg-slate-950 border border-slate-800 flex items-center justify-center text-slate-600">
-                <Database className="w-8 h-8" />
-              </div>
-              <div className="space-y-1.5 max-w-sm">
-                <h4 className="text-sm font-bold text-slate-300">編集する作品を選択してください</h4>
-                <p className="text-xs text-slate-500 leading-relaxed">
-                  左のリストから既存ワークをクリックして情報変更するか、または「新しい作品を追加する」ボタンを押して新規登録を開始してください。
-                </p>
-              </div>
-            </div>
-          ) : (
-            <div className="space-y-6 animate-fade-in text-left">
-              {/* Form Title */}
-              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-                <h4 className="text-sm font-bold text-slate-200 flex items-center gap-2">
-                  <span className="bg-red-500 text-white text-[10px] font-mono font-bold px-1.5 py-0.5 rounded uppercase">
-                    {isAddingNew ? 'CREATE' : 'UPDATE'}
-                  </span>
-                  <span>{isAddingNew ? '新規作品の登録フォーム' : `「${formTitleJa}」情報の編集`}</span>
+        {/* Right: Form Editor */}
+        <div className="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-2xl p-6">
+          {isEditing ? (
+            <div className="space-y-4 text-left">
+              <div className="flex items-center justify-between border-b border-slate-850 pb-3">
+                <h4 className="text-base font-bold text-slate-200">
+                  {isAddingNew ? '新規作品の登録' : '作品情報の編集'}
                 </h4>
-                {!isAddingNew && (
-                  <button
-                    onClick={() => handleDelete(formId)}
-                    className="flex items-center gap-1 text-[10px] font-bold text-red-500 hover:text-red-400 hover:underline px-2 py-1 rounded bg-red-950/20"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" /> 作品の削除
-                  </button>
-                )}
-              </div>
-
-              {/* AI Auto-Collect Assist Section */}
-              <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-3">
-                <div className="flex items-center gap-2 text-xs font-bold text-slate-300">
-                  <Sparkles className="w-4 h-4 text-amber-500" />
-                  <span>AI作品検索コレクター（自動情報収集・補完）</span>
-                </div>
-                <p className="text-[11px] text-slate-400 leading-relaxed">
-                  新たに登録したいMCU映画、ドラマ、アニメ番組などのキーワードを入力して「AIで情報を収集する」をクリックしてください。Web上の最新情報（邦題、英題、公開日、ストーリー時系列、作品概要、関連キャラなど）を探して、下のフォームを自動入力します。
-                </p>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    placeholder="例: ブレイド MCU映画, アイアンハート ドラマ, スパイダーマン4..."
-                    value={aiSearchQuery}
-                    onChange={(e) => setAiSearchQuery(e.target.value)}
-                    className="flex-1 bg-slate-900 border border-slate-800 text-slate-200 text-xs rounded-lg px-3 py-2 outline-none focus:border-red-500/50"
-                  />
+                {!isAddingNew && selectedId && (
                   <button
                     type="button"
-                    onClick={handleSearchMcuWorkWithAi}
-                    disabled={isSearchingAi}
-                    className="px-4 py-2 bg-gradient-to-r from-red-650 to-amber-600 hover:from-red-550 hover:to-amber-500 disabled:opacity-50 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all shrink-0 shadow-md"
+                    onClick={() => handleDelete(selectedId)}
+                    className="p-1.5 text-red-400 hover:bg-red-950/50 rounded-lg border border-red-900/30 transition-colors text-xs flex items-center gap-1 cursor-pointer"
                   >
-                    {isSearchingAi ? (
-                      <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                    ) : (
-                      <Sparkles className="w-3.5 h-3.5" />
-                    )}
-                    {isSearchingAi ? '情報収集中...' : 'AIで情報を収集する'}
+                    <Trash2 className="w-3.5 h-3.5" /> 削除
                   </button>
-                </div>
-                {aiSearchError && (
-                  <p className="text-[10px] text-red-400 font-medium bg-red-950/20 border border-red-900/30 p-2 rounded-lg">
-                    ⚠️ {aiSearchError}
-                  </p>
-                )}
-                {aiSearchSuccess && (
-                  <p className="text-[10px] text-emerald-400 font-semibold bg-emerald-950/20 border border-emerald-900/30 p-2 rounded-lg">
-                    ✓ データの収集に成功しました！以下の入力情報を確認して調整の上、最下部の「変更を保存」を押してください。
-                  </p>
                 )}
               </div>
 
-              {/* Form Field Matrix */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* ID Input */}
+              {/* AI Search helper */}
+              <div className="p-3 bg-slate-950 border border-slate-850 rounded-xl flex items-center gap-2">
+                <input
+                  type="text"
+                  placeholder="キーワードでAI検索自動入力（例: アベンジャーズ Doomsday）"
+                  value={aiSearchQuery}
+                  onChange={(e) => setAiSearchQuery(e.target.value)}
+                  className="bg-slate-900 text-xs text-slate-200 p-2 rounded-lg border border-slate-800 flex-1 outline-none"
+                />
+                <button
+                  type="button"
+                  onClick={handleSearchMcuWorkWithAi}
+                  disabled={isSearchingAi}
+                  className="px-3 py-2 bg-amber-600 text-white rounded-lg text-xs font-bold cursor-pointer shrink-0"
+                >
+                  {isSearchingAi ? '検索中...' : 'AIで自動入力'}
+                </button>
+              </div>
+
+              {/* Form inputs */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                 <div>
-                  <label className="text-xs font-bold text-slate-400 block mb-1">
-                    作品ID <span className="text-red-500">*</span>
-                    <span className="text-[10px] text-slate-500 font-normal ml-1">（英数字・アンダースコア。例: marvel_zombies）</span>
-                  </label>
+                  <label className="text-slate-400 block mb-1">ID (英数字)</label>
                   <input
                     type="text"
-                    disabled={!isAddingNew}
                     value={formId}
                     onChange={(e) => setFormId(e.target.value)}
-                    placeholder="e.g. captain_america_bnw"
-                    className="w-full bg-slate-950 hover:bg-slate-900 border border-slate-800 focus:border-slate-700 disabled:opacity-40 text-slate-200 text-sm rounded-xl p-2.5 outline-none transition-colors"
+                    className="w-full bg-slate-950 text-slate-200 p-2 rounded-lg border border-slate-800 outline-none"
                   />
                 </div>
-
-                {/* Content Type */}
                 <div>
-                  <label className="text-xs font-bold text-slate-400 block mb-1">
-                    作品カテゴリ
-                  </label>
-                  <select
-                    value={formType}
-                    onChange={(e) => setFormType(e.target.value as any)}
-                    className="w-full bg-slate-950 hover:bg-slate-900 border border-slate-800 text-slate-200 text-sm rounded-xl p-2.5 outline-none transition-colors cursor-pointer"
-                  >
-                    <option value="movie">映画（劇場公開）</option>
-                    <option value="drama">ドラマシリーズ（配信）</option>
-                    <option value="special">スペシャル（ワンショット / アニメ等）</option>
-                  </select>
-                </div>
-
-                {/* Title JP */}
-                <div>
-                  <label className="text-xs font-bold text-slate-400 block mb-1">
-                    タイトル (日本語) <span className="text-red-500">*</span>
-                  </label>
+                  <label className="text-slate-400 block mb-1">作品名 (日本語)</label>
                   <input
                     type="text"
                     value={formTitleJa}
                     onChange={(e) => setFormTitleJa(e.target.value)}
-                    placeholder="e.g. アベンジャーズ：ドゥームズデイ"
-                    className="w-full bg-slate-950 hover:bg-slate-900 border border-slate-800 text-slate-200 text-sm rounded-xl p-2.5 outline-none focus:border-slate-700"
+                    className="w-full bg-slate-950 text-slate-200 p-2 rounded-lg border border-slate-800 outline-none"
                   />
                 </div>
-
-                {/* Title EN */}
                 <div>
-                  <label className="text-xs font-bold text-slate-400 block mb-1">
-                    タイトル (英語 / 原題)
-                  </label>
+                  <label className="text-slate-400 block mb-1">英語タイトル</label>
                   <input
                     type="text"
                     value={formTitleEn}
                     onChange={(e) => setFormTitleEn(e.target.value)}
-                    placeholder="e.g. Avengers: Doomsday"
-                    className="w-full bg-slate-950 hover:bg-slate-900 border border-slate-800 text-slate-200 text-sm rounded-xl p-2.5 outline-none focus:border-slate-700"
+                    className="w-full bg-slate-950 text-slate-200 p-2 rounded-lg border border-slate-800 outline-none"
                   />
                 </div>
-
-                {/* Release date YYYY-MM-DD */}
                 <div>
-                  <label className="text-xs font-bold text-slate-400 block mb-1">
-                    公開予定日 / 配信開始日 (米国基準)
-                    <span className="text-[10px] text-sky-450 ml-1">（未来の日付を設定すると「公開予定」ステータスになります）</span>
-                  </label>
+                  <label className="text-slate-400 block mb-1">種類</label>
+                  <select
+                    value={formType}
+                    onChange={(e) => setFormType(e.target.value as any)}
+                    className="w-full bg-slate-950 text-slate-200 p-2 rounded-lg border border-slate-800 outline-none"
+                  >
+                    <option value="movie">映画 (Movie)</option>
+                    <option value="drama">ドラマ (Drama)</option>
+                    <option value="special">特別編 (Special)</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-slate-400 block mb-1">公開日 (YYYY-MM-DD)</label>
                   <input
                     type="date"
                     value={formReleaseDate}
                     onChange={(e) => setFormReleaseDate(e.target.value)}
-                    className="w-full bg-slate-950 hover:bg-slate-900 border border-slate-800 text-slate-200 text-sm rounded-xl p-2.5 outline-none focus:border-slate-700 font-mono"
+                    className="w-full bg-slate-950 text-slate-200 p-2 rounded-lg border border-slate-800 outline-none"
                   />
                 </div>
-
-                {/* Phase Select */}
                 <div>
-                  <label className="text-xs font-bold text-slate-400 block mb-1">
-                    MCU フェーズ
-                  </label>
-                  <select
-                    value={formPhase}
-                    onChange={(e) => setFormPhase(Number(e.target.value))}
-                    className="w-full bg-slate-950 hover:bg-slate-900 border border-slate-800 text-slate-200 text-sm rounded-xl p-2.5 outline-none transition-colors cursor-pointer"
-                  >
-                    {[1, 2, 3, 4, 5, 6].map(ph => (
-                      <option key={ph} value={ph}>フェーズ {ph}</option>
-                    ))}
-                  </select>
-                </div>
-
-
-
-                {/* Chrono Order */}
-                <div>
-                  <label className="text-xs font-bold text-slate-400 block mb-1 font-mono">
-                    劇中時系列カウント (インデックス番号)
-                  </label>
+                  <label className="text-slate-400 block mb-1">Phase</label>
                   <input
                     type="number"
-                    value={formChronoOrder}
-                    onChange={(e) => setFormChronoOrder(Number(e.target.value))}
-                    className="w-full bg-slate-950 hover:bg-slate-900 border border-slate-800 text-slate-200 text-sm rounded-xl p-2.5 outline-none focus:border-slate-700 font-mono"
-                  />
-                </div>
-
-                {/* Chrono Setting label */}
-                <div>
-                  <label className="text-xs font-bold text-slate-400 block mb-1">
-                    劇中時間設定（目安情報）
-                  </label>
-                  <input
-                    type="text"
-                    value={formChronoSetting}
-                    onChange={(e) => setFormChronoSetting(e.target.value)}
-                    placeholder="e.g. 2026年（マルチバース衝突の最高潮、ドゥームの宣戦布告）"
-                    className="w-full bg-slate-950 hover:bg-slate-900 border border-slate-800 text-slate-200 text-sm rounded-xl p-2.5 outline-none focus:border-slate-700"
-                  />
-                </div>
-
-                {/* Duration or Episodes */}
-                <div>
-                  <label className="text-xs font-bold text-slate-400 block mb-1">
-                    上映時間、または話数
-                  </label>
-                  <input
-                    type="text"
-                    value={formDuration}
-                    onChange={(e) => setFormDuration(e.target.value)}
-                    placeholder="e.g. 2時間35分 / 全9話"
-                    className="w-full bg-slate-950 hover:bg-slate-900 border border-slate-800 text-slate-200 text-sm rounded-xl p-2.5 outline-none focus:border-slate-700"
-                  />
-                </div>
-
-                {/* Director */}
-                <div>
-                  <label className="text-xs font-bold text-slate-400 block mb-1">
-                    監督、またはクリエイター
-                  </label>
-                  <input
-                    type="text"
-                    value={formDirector}
-                    onChange={(e) => setFormDirector(e.target.value)}
-                    placeholder="e.g. アンソニー＆ジョー・ルッソ"
-                    className="w-full bg-slate-950 hover:bg-slate-900 border border-slate-800 text-slate-200 text-sm rounded-xl p-2.5 outline-none focus:border-slate-700"
-                  />
-                </div>
-
-                {/* Importance level */}
-                <div>
-                  <label className="text-xs font-bold text-slate-400 block mb-1">
-                    作品のストーリー重要度 (3段階)
-                  </label>
-                  <select
-                    value={formImportance}
-                    onChange={(e) => setFormImportance(Number(e.target.value) as any)}
-                    className="w-full bg-slate-950 hover:bg-slate-900 border border-slate-800 text-slate-200 text-sm rounded-xl p-2.5 outline-none transition-colors cursor-pointer font-bold"
-                  >
-                    <option value={3}>★★★ 必須級 (メインストーリーに直結)</option>
-                    <option value={2}>★★ 推奨 (主要キャラクターの深掘り / 背景知識)</option>
-                    <option value={1}>★ 補足 (スピンオフ / 特定キャラクターファン向け)</option>
-                  </select>
-                </div>
-
-                {/* Hero Icon Emoji */}
-                <div>
-                  <label className="text-xs font-bold text-slate-400 block mb-1">
-                    作品を象徴する絵文字 (カードアイコン)
-                  </label>
-                  <input
-                    type="text"
-                    value={formHeroIcon}
-                    onChange={(e) => setFormHeroIcon(e.target.value)}
-                    placeholder="e.g. 🎭 / 🦅 / 🎬"
-                    className="w-full bg-slate-950 hover:bg-slate-900 border border-slate-800 text-slate-200 text-sm rounded-xl p-2.5 outline-none focus:border-slate-700"
-                  />
-                </div>
-
-                {/* Accent Color Hex */}
-                <div>
-                  <label className="text-xs font-bold text-slate-400 block mb-1">
-                    イメージアクセント色 (カラーコード)
-                  </label>
-                  <div className="flex gap-2">
-                    <input
-                      type="color"
-                      value={formAccentColor}
-                      onChange={(e) => setFormAccentColor(e.target.value)}
-                      className="w-12 h-[38px] bg-slate-950 hover:bg-slate-900 border border-slate-800 rounded-xl outline-none cursor-pointer p-0.5 shrink-0"
-                    />
-                    <input
-                      type="text"
-                      value={formAccentColor}
-                      onChange={(e) => setFormAccentColor(e.target.value)}
-                      placeholder="#ef4444"
-                      className="flex-1 bg-slate-950 hover:bg-slate-900 border border-slate-800 text-slate-200 text-sm rounded-xl p-2.5 outline-none focus:border-slate-700 font-mono"
-                    />
-                  </div>
-                </div>
-
-                {/* Official URL */}
-                <div className="col-span-1 md:col-span-2">
-                  <label className="text-xs font-bold text-slate-400 block mb-1">
-                    公式サイト URL
-                  </label>
-                  <input
-                    type="text"
-                    value={formOfficialUrl}
-                    onChange={(e) => setFormOfficialUrl(e.target.value)}
-                    placeholder="e.g. https://marvel.disney.co.jp/movie/..."
-                    className="w-full bg-slate-950 hover:bg-slate-900 border border-slate-800 text-slate-200 text-sm rounded-xl p-2.5 outline-none focus:border-slate-700 font-sans"
-                  />
-                </div>
-
-                {/* Explanations search query hook */}
-                <div className="col-span-1 md:col-span-2">
-                  <label className="text-xs font-bold text-slate-400 block mb-1">
-                    詳細ネット解説用 検索キーワード
-                  </label>
-                  <input
-                    type="text"
-                    value={formExplanationUrlQuery}
-                    onChange={(e) => setFormExplanationUrlQuery(e.target.value)}
-                    placeholder="e.g. アベンジャーズ ドゥームズデイ ネタバレ 考察"
-                    className="w-full bg-slate-950 hover:bg-slate-900 border border-slate-800 text-slate-200 text-sm rounded-xl p-2.5 outline-none focus:border-slate-700"
+                    value={formPhase}
+                    onChange={(e) => setFormPhase(Number(e.target.value))}
+                    className="w-full bg-slate-950 text-slate-200 p-2 rounded-lg border border-slate-800 outline-none"
                   />
                 </div>
               </div>
 
-              {/* Story Importance explanation */}
               <div>
-                <label className="text-xs font-bold text-slate-400 block mb-1.5">
-                  ストーリー重要度の理由・背景
-                </label>
-                <textarea
-                  value={formImportanceReason}
-                  onChange={(e) => setFormImportanceReason(e.target.value)}
-                  placeholder="e.g. ルッソ兄弟が監督に復帰。ロバート・ダウニー・Jrが全く違う「ドクター・ドゥーム」役として衝撃復帰する今作。マルチバース世界の命運が完全に決定づけられます。"
-                  rows={2}
-                  className="w-full bg-slate-950 hover:bg-slate-900 border border-slate-800 text-slate-200 text-sm rounded-xl p-3 outline-none focus:border-slate-700 transition-colors"
-                />
-              </div>
-
-              {/* Synopsis / Outline */}
-              <div>
-                <label className="text-xs font-bold text-slate-400 block mb-1.5">
-                  あらすじ・解説
-                </label>
+                <label className="text-slate-400 block mb-1 text-xs">あらすじ</label>
                 <textarea
                   value={formSynopsis}
                   onChange={(e) => setFormSynopsis(e.target.value)}
-                  placeholder="作品の概要や期待されるプロットを記載してください。ネタバレ感想とは異なりますので、基本のあらすじなどを入力します。"
-                  rows={4}
-                  className="w-full bg-slate-950 hover:bg-slate-900 border border-slate-800 text-slate-200 text-sm rounded-xl p-3 outline-none focus:border-slate-700 transition-colors"
+                  rows={3}
+                  className="w-full bg-slate-950 text-slate-200 text-xs p-2.5 rounded-lg border border-slate-800 outline-none"
                 />
               </div>
 
-              {/* Characters multi-select */}
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-slate-400 block">
-                  関連登場キャラクターの選択
-                  <span className="text-[10px] text-slate-500 font-bold ml-1">（作品詳細の相関図や重要登場人物として連携されます）</span>
-                </label>
-                <div className="bg-slate-950 p-4 rounded-xl border border-slate-850 max-h-[180px] overflow-y-auto grid grid-cols-2 sm:grid-cols-3 gap-2">
+              {/* Characters selection */}
+              <div>
+                <label className="text-slate-400 block mb-1 text-xs">登場キャラクター</label>
+                <div className="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto bg-slate-950 p-2.5 rounded-lg border border-slate-850">
                   {Object.values(charactersDb).map(char => {
                     const isChecked = formCharacterIds.includes(char.id);
                     return (
@@ -1435,247 +925,111 @@ export default function DatabaseAdmin({ items, extraMap, onUpdateDb, onResetDb, 
                         key={char.id}
                         type="button"
                         onClick={() => handleCharacterToggle(char.id)}
-                        className={`p-1.5 rounded-lg border text-left text-xs font-medium flex items-center gap-1.5 transition-all cursor-pointer ${
-                          isChecked 
-                            ? 'bg-slate-800/80 border-red-500 text-slate-100' 
-                            : 'bg-slate-900/40 border-slate-850 text-slate-400 hover:text-slate-300 hover:border-slate-800'
+                        className={`px-2 py-1 rounded text-[10px] border cursor-pointer ${
+                          isChecked ? 'bg-red-600 text-white border-red-500 font-bold' : 'bg-slate-900 text-slate-400 border-slate-800'
                         }`}
                       >
-                        <div className={`w-3.5 h-3.5 rounded border flex items-center justify-center shrink-0 text-[8px] font-extrabold ${
-                          isChecked ? 'bg-red-600 border-red-500 text-white' : 'border-slate-800'
-                        }`}>
-                          {isChecked && '✓'}
-                        </div>
-                        <span className="shrink-0">{char.emoji}</span>
-                        <span className="truncate">{char.heroNameJa || char.nameJa}</span>
+                        {char.emoji} {char.heroNameJa || char.nameJa}
                       </button>
                     );
                   })}
                 </div>
               </div>
 
-              {/* Form Buttons */}
-              <div className="pt-4 border-t border-slate-800 flex items-center justify-between">
-                <span className="text-[10px] text-slate-500 font-mono">
-                  * 必須フィールド。
-                </span>
-                <div className="flex gap-3">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsEditing(false);
-                      setIsAddingNew(false);
-                      setSelectedId('');
-                    }}
-                    className="px-4 py-2 hover:bg-slate-800 text-slate-400 hover:text-slate-50 rounded-xl text-xs font-bold transition-all cursor-pointer"
-                  >
-                    キャンセル
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleSave}
-                    className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-red-600 hover:bg-red-500 text-white rounded-xl text-xs font-bold transition-all shadow-md cursor-pointer"
-                  >
-                    <Save className="w-3.5 h-3.5" />
-                    {isAddingNew ? 'この作品を登録する' : '変更内容を保存する'}
-                  </button>
-                </div>
-              </div>
-
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Live Sync Confirmation Modal */}
-      {showSyncModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm overflow-y-auto">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-3xl max-h-[85vh] flex flex-col shadow-2xl animate-fade-in text-left">
-            
-            {/* Header */}
-            <div className="flex items-center justify-between p-5 border-b border-slate-800 shrink-0">
-              <div className="flex items-center gap-2">
-                <div className="bg-amber-500/15 p-2 rounded-lg text-amber-500 border border-amber-500/30">
-                  <Sparkles className="w-5 h-5 animate-pulse" />
-                </div>
-                <div>
-                  <h3 className="text-sm font-bold text-slate-200">公式MCUデータとの同期・上書き確認</h3>
-                  <p className="text-[11px] text-slate-400 mt-0.5">
-                    公式最新スケジュール情報（新規・更新分）と、現在のデータベースを視覚的に比較しました。
-                  </p>
-                </div>
-              </div>
-              <button
-                onClick={() => setShowSyncModal(false)}
-                className="text-slate-400 hover:text-slate-50 p-1.5 hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            {/* List Body */}
-            <div className="flex-1 overflow-y-auto p-5 space-y-4">
-              <div className="flex items-center justify-between bg-slate-950 p-2.5 rounded-xl border border-slate-850">
-                <span className="text-[11px] text-slate-400 font-bold font-mono">
-                  同期候補: {fetchedItems.length} 作品 / 選択中: {selectedSyncIds.length} 作品
-                </span>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => setSelectedSyncIds(fetchedItems.map(x => x.id))}
-                    className="text-[10px] text-sky-400 hover:underline font-bold px-1.5 py-0.5 transition-all text-left bg-transparent"
-                  >
-                    すべて選択
-                  </button>
-                  <span className="text-slate-600 text-xs">|</span>
-                  <button
-                    onClick={() => setSelectedSyncIds([])}
-                    className="text-[10px] text-slate-400 hover:underline font-bold px-1.5 py-0.5 transition-all text-left bg-transparent"
-                  >
-                    すべて解除
-                  </button>
-                </div>
-              </div>
-
-              <div className="space-y-2.5">
-                {fetchedItems.map((fetched) => {
-                  const existing = items.find(x => x.id === fetched.id);
-                  const isChecked = selectedSyncIds.includes(fetched.id);
-
-                  // 差分・ステータス検出
-                  let status: 'new' | 'update' | 'no_change' = 'no_change';
-                  const diffs: string[] = [];
-
-                  if (!existing) {
-                    status = 'new';
-                  } else {
-                    if (existing.releaseDate !== fetched.releaseDate) {
-                      diffs.push(`公開日: "${existing.releaseDate}" ➔ "${fetched.releaseDate}"`);
-                    }
-                    if (existing.titleJa !== fetched.titleJa) {
-                      diffs.push(`タイトル(日): "${existing.titleJa}" ➔ "${fetched.titleJa}"`);
-                    }
-                    if (existing.durationOrEpisodes !== fetched.durationOrEpisodes) {
-                      diffs.push(`規模/上映時間: "${existing.durationOrEpisodes}" ➔ "${fetched.durationOrEpisodes}"`);
-                    }
-                    if (fetched.directorOrCreator && existing.directorOrCreator !== fetched.directorOrCreator) {
-                      diffs.push(`監督: "${existing.directorOrCreator}" ➔ "${fetched.directorOrCreator}"`);
-                    }
-                    
-                    if (diffs.length > 0) {
-                      status = 'update';
-                    }
-                  }
-
-                  return (
-                    <div 
-                      key={fetched.id}
-                      onClick={() => handleToggleSyncId(fetched.id)}
-                      className={`p-3.5 border rounded-xl transition-all cursor-pointer select-none space-y-2 ${
-                        isChecked 
-                          ? 'bg-slate-850 border-amber-500/40' 
-                          : 'bg-slate-900 border-slate-850 hover:border-slate-800'
-                      }`}
-                    >
-                      <div className="flex items-start gap-3">
-                        {/* checkbox */}
-                        <div 
-                          className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 mt-0.5 text-[10px] font-extrabold ${
-                            isChecked ? 'bg-amber-500 border-amber-400 text-slate-950' : 'border-slate-700 bg-slate-950'
-                          }`}
-                        >
-                          {isChecked && '✓'}
-                        </div>
-
-                        {/* Title and Badge */}
-                        <div className="flex-1 min-w-0">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <span className="text-base shrink-0">{fetched.heroIcon || '🎬'}</span>
-                            <h4 className="text-xs font-bold text-slate-200 truncate flex-1 md:max-w-md">
-                              {fetched.titleJa} <span className="text-[10px] text-slate-500 font-normal font-mono">({fetched.titleEn})</span>
-                            </h4>
-                            
-                            {status === 'new' && (
-                              <span className="px-1.5 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[9px] font-bold font-mono">
-                                新規登録 (NEW)
-                              </span>
-                            )}
-                            {status === 'update' && (
-                              <span className="px-1.5 py-0.5 rounded bg-amber-500/10 border border-amber-500/30 text-amber-400 text-[9px] font-bold font-mono">
-                                情報上書き (UPDATE)
-                              </span>
-                            )}
-                            {status === 'no_change' && (
-                              <span className="px-1.5 py-0.5 rounded bg-slate-800 border border-slate-750 text-slate-500 text-[9px] font-bold font-mono">
-                                差分なし (LATEST)
-                              </span>
-                            )}
-                          </div>
-
-                          <p className="text-[10px] text-slate-400 leading-relaxed mt-1.5 italic font-sans truncate">
-                            {fetched.synopsis || 'あらすじ説明は未発表、または省略されています。'}
-                          </p>
-
-                          {/* Diff changes view */}
-                          {status === 'update' && diffs.length > 0 && (
-                            <div className="mt-2 text-[10px] font-mono text-amber-450 bg-amber-950/20 border border-amber-900/30 p-2 rounded-lg space-y-0.5">
-                              <span className="font-bold text-slate-300 block mb-0.5">※以下の情報が自動修正・上書きされます:</span>
-                              {diffs.map((diff, idx) => (
-                                <div key={idx} className="flex items-center gap-1 text-amber-400">
-                                  <span>•</span>
-                                  <span>{diff}</span>
-                                </div>
-                              ))}
-                            </div>
-                          )}
-
-                          {status === 'new' && (
-                            <div className="mt-2 text-[10px] font-mono text-emerald-400 bg-emerald-950/20 border border-emerald-900/30 p-2 rounded-lg">
-                              <span className="font-bold text-slate-300 block mb-1">新規追加される項目:</span>
-                              <div className="grid grid-cols-2 gap-x-4 gap-y-0.5 text-slate-400">
-                                <div>公開日: <span className="text-emerald-400">{fetched.releaseDate}</span></div>
-                                <div>フェーズ: <span className="text-emerald-400 font-bold">Phase {fetched.phase}</span></div>
-                                <div>監督: <span className="text-emerald-400">{fetched.directorOrCreator}</span></div>
-                                <div>規模/話数: <span className="text-emerald-400">{fetched.durationOrEpisodes}</span></div>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Footer buttons */}
-            <div className="p-4 border-t border-slate-800 bg-slate-950 flex items-center justify-between shrink-0 rounded-b-2xl">
-              <span className="text-[10px] text-slate-400 font-medium">
-                チェックが入った作品が適用され、タイムラインや統計へ即座に反映されます。
-              </span>
-              <div className="flex gap-2.5">
+              <div className="flex justify-end gap-3 pt-2">
                 <button
                   type="button"
-                  onClick={() => setShowSyncModal(false)}
-                  className="px-4 py-2 hover:bg-slate-800 text-slate-400 hover:text-slate-50 rounded-xl text-xs font-bold transition-all cursor-pointer"
+                  onClick={() => setIsEditing(false)}
+                  className="px-4 py-2 bg-slate-800 text-slate-400 rounded-xl text-xs font-bold cursor-pointer"
                 >
                   キャンセル
                 </button>
                 <button
                   type="button"
-                  disabled={selectedSyncIds.length === 0}
-                  onClick={handleApplySync}
-                  className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-amber-600 hover:bg-amber-500 disabled:opacity-40 disabled:bg-slate-800 text-white rounded-xl text-xs font-bold transition-all shadow-md cursor-pointer"
+                  onClick={handleSave}
+                  className="px-6 py-2 bg-red-600 text-white rounded-xl text-xs font-bold cursor-pointer"
                 >
-                  <Check className="w-3.5 h-3.5" />
-                  選択した {selectedSyncIds.length} 件の変更を適用
+                  保存する
                 </button>
               </div>
             </div>
+          ) : (
+            <div className="h-64 flex flex-col items-center justify-center text-slate-500 text-xs space-y-2">
+              <Database className="w-8 h-8 text-slate-700" />
+              <p>左側のリストから作品を選択するか、「新しい作品を追加」をクリックしてください。</p>
+            </div>
+          )}
+        </div>
+      </div>
 
+      {/* Sync Modal */}
+      {showSyncModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 max-w-2xl w-full max-h-[80vh] flex flex-col">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
+              <h4 className="text-base font-bold text-slate-200">公式スケジュール同期プレビュー</h4>
+              <button
+                type="button"
+                onClick={() => setShowSyncModal(false)}
+                className="text-slate-500 hover:text-slate-300"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <p className="text-xs text-slate-400 mb-3">
+              適用したい項目にチェックを入れて「同期実行」をクリックしてください。
+            </p>
+
+            <div className="overflow-y-auto space-y-2 flex-1 custom-scrollbar pr-1">
+              {fetchedItems.map((fetched: any) => {
+                const isSelected = selectedSyncIds.includes(fetched.id);
+                return (
+                  <label
+                    key={fetched.id}
+                    className={`p-3 rounded-xl border flex items-center justify-between text-xs cursor-pointer select-none ${
+                      isSelected ? 'bg-slate-950 border-amber-500/50 text-slate-100' : 'bg-slate-950/50 border-slate-850 text-slate-400'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => handleToggleSyncId(fetched.id)}
+                        className="rounded border-slate-800"
+                      />
+                      <div>
+                        <span className="font-bold block">{fetched.titleJa}</span>
+                        <span className="text-[10px] text-slate-500 font-mono">{fetched.releaseDate}</span>
+                      </div>
+                    </div>
+                    <span className="text-[10px] px-2 py-0.5 rounded bg-slate-900 border border-slate-800">
+                      P{fetched.phase}
+                    </span>
+                  </label>
+                );
+              })}
+            </div>
+
+            <div className="border-t border-slate-800 pt-4 mt-4 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setShowSyncModal(false)}
+                className="px-4 py-2 bg-slate-800 text-slate-400 rounded-xl text-xs font-bold cursor-pointer"
+              >
+                キャンセル
+              </button>
+              <button
+                type="button"
+                onClick={handleApplySync}
+                className="px-6 py-2 bg-amber-600 text-white rounded-xl text-xs font-bold cursor-pointer"
+              >
+                選択した {selectedSyncIds.length} 件を適用
+              </button>
+            </div>
           </div>
         </div>
       )}
-
     </div>
   );
 }

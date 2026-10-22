@@ -35,7 +35,6 @@ export default function DetailModal({ item, review, onClose, onSaveReview, onCha
     characterIds: []
   };
 
-  // Synchronize state when the modal opens or item changes
   useEffect(() => {
     if (review) {
       setWatched(review.watched);
@@ -53,12 +52,10 @@ export default function DetailModal({ item, review, onClose, onSaveReview, onCha
     setIsSaved(false);
   }, [item, review]);
 
-  // Handle auto-watched toggle
   const handleWatchedToggle = () => {
     const nextWatched = !watched;
     setWatched(nextWatched);
     if (nextWatched && !watchedDate) {
-      // Prefill today's date
       const today = new Date().toISOString().split('T')[0];
       setWatchedDate(today);
     }
@@ -67,7 +64,7 @@ export default function DetailModal({ item, review, onClose, onSaveReview, onCha
   const handleSave = () => {
     const updatedReview: UserReview = {
       watched,
-      rating: watched ? rating : 0, // rating is only relevant if watched
+      rating: watched ? rating : 0,
       watchedDate: watched ? watchedDate : '',
       notes,
       isFavorite,
@@ -80,7 +77,6 @@ export default function DetailModal({ item, review, onClose, onSaveReview, onCha
     }, 2000);
   };
 
-  // Generate Google Search query link for spoiler-filled review
   const spoilerSearchUrl = `https://www.google.com/search?q=${encodeURIComponent(item.titleJa + ' ネタバレ 解説 考察 結末')}`;
 
   return (
@@ -131,6 +127,7 @@ export default function DetailModal({ item, review, onClose, onSaveReview, onCha
             </p>
           </div>
           <button
+            type="button"
             onClick={onClose}
             className="p-1.5 rounded-full hover:bg-slate-800 text-slate-500 hover:text-slate-300 transition-colors"
           >
@@ -138,7 +135,7 @@ export default function DetailModal({ item, review, onClose, onSaveReview, onCha
           </button>
         </div>
 
-        {/* Modal Body (Scrollable) */}
+        {/* Modal Body */}
         <div className="p-6 overflow-y-auto space-y-6 flex-1 custom-scrollbar">
           {/* Grid: Synopsis & Importance */}
           <div className="grid grid-cols-1 gap-4 bg-slate-950 p-4 rounded-xl border border-slate-850">
@@ -163,23 +160,23 @@ export default function DetailModal({ item, review, onClose, onSaveReview, onCha
             </div>
           </div>
 
-          {/* Interactive Characters Network (重要度の前、または直後に追加) */}
+          {/* Characters Network */}
           {extra.characterIds.length > 0 && (
             <div className="border border-slate-850 rounded-xl p-4 bg-slate-950">
               <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider font-mono mb-2.5">
                 主要登場キャスト & ヒーロー（クリックで他出演作を相互参照）
               </h4>
               <div className="flex flex-wrap gap-2">
-                {extra.characterIds.map(charId => {
+                {extra.characterIds.map((charId: string) => {
                   const char = charactersDb[charId];
                   if (!char) return null;
                   
-                  // 他の作品でこのキャラクターが出ている数を計算する想定
                   const appearances = Object.values(fullExtraMap || mcuExtraDataMap).filter(m => m.characterIds.includes(charId)).length;
 
                   return (
                     <button
                       key={charId}
+                      type="button"
                       onClick={() => {
                         if (onCharacterClick) {
                           onCharacterClick(charId);
@@ -205,7 +202,7 @@ export default function DetailModal({ item, review, onClose, onSaveReview, onCha
             </div>
           )}
 
-          {/* Importance level detailed box */}
+          {/* Importance level */}
           <div className="border border-slate-850 rounded-xl p-4 bg-slate-950">
             <h4 className="text-sm font-bold text-slate-200 flex items-center gap-2">
               シリーズとしての重要度評価
@@ -226,7 +223,6 @@ export default function DetailModal({ item, review, onClose, onSaveReview, onCha
               )}
             </h4>
 
-            {/* Render stars */}
             <div className="flex gap-1 my-2">
               {[1, 2, 3].map((star) => (
                 <Star
@@ -253,7 +249,6 @@ export default function DetailModal({ item, review, onClose, onSaveReview, onCha
               関連サイトリンク
             </h4>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {/* Official Site */}
               <a
                 href={item.officialUrl || 'https://marvel.disney.co.jp/'}
                 target="_blank"
@@ -269,7 +264,6 @@ export default function DetailModal({ item, review, onClose, onSaveReview, onCha
                 <ChevronRight className="w-4 h-4 text-slate-500" />
               </a>
 
-              {/* Spoiler/Explanation site search query */}
               <a
                 href={spoilerSearchUrl}
                 target="_blank"
@@ -291,7 +285,7 @@ export default function DetailModal({ item, review, onClose, onSaveReview, onCha
             </p>
           </div>
 
-          {/* User Review & Status Section */}
+          {/* User Review Section */}
           <div className="border-t border-slate-800 pt-5 space-y-4">
             <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider font-mono">
               マイ鑑賞記録 & レビュー
@@ -299,22 +293,17 @@ export default function DetailModal({ item, review, onClose, onSaveReview, onCha
 
             {isUpcoming ? (
               <div className="bg-slate-950 p-5 rounded-xl border border-sky-950/40 text-left space-y-3">
-                <div className="flex items-center gap-2 text-sky-450 font-bold text-sm">
+                <div className="flex items-center gap-2 text-sky-400 font-bold text-sm">
                   <Calendar className="w-4 h-4 text-sky-400" />
                   <span>公開予定（未来の時間軸）の作品です</span>
                 </div>
                 <p className="text-xs text-slate-400 leading-relaxed">
-                  この作品は米国公開予定日が <strong className="text-slate-350 font-mono">{item.releaseDate}</strong> となっており、まだリリースされていない未来の作品です。
-                  公開日を迎えると、あなたの鑑賞完了バーや統計率（進捗率）の分母に自動的として追加され、
-                  こちらのフォームから鑑賞チェック、お気に入り設定、評価星（1〜5）、感想メモの保存ができるようになります。
+                  この作品は米国公開予定日が <strong className="text-slate-300 font-mono">{item.releaseDate}</strong> となっており、まだリリースされていない未来の作品です。
+                  公開日を迎えると鑑賞チェック、お気に入り設定、評価星、感想メモが書き込めるようになります。
                 </p>
-                <div className="inline-flex items-center gap-1.5 text-[10px] bg-sky-950/40 text-sky-400 border border-sky-900/40 px-2 py-0.5 rounded font-bold font-mono">
-                  公開までしばしお待ちください！
-                </div>
               </div>
             ) : (
               <>
-                {/* Quick checkbox list & Heart favorite */}
                 <div className="flex flex-wrap items-center gap-4">
                   <label className="flex items-center gap-2.5 cursor-pointer select-none bg-slate-950 border border-slate-800 hover:border-slate-700 py-2.5 px-4 rounded-xl transition-all">
                     <input
@@ -345,21 +334,19 @@ export default function DetailModal({ item, review, onClose, onSaveReview, onCha
                   </button>
                 </div>
 
-                {/* Ratings & Watched Date (enabled if watched is true) */}
                 {watched && (
                   <motion.div
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: 'auto' }}
                     className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-950 p-4 rounded-xl border border-slate-850"
                   >
-                    {/* Star rating selector */}
                     <div>
                       <span className="text-xs font-bold text-slate-400 block mb-1">評価を選択</span>
                       <div className="flex items-center gap-1 mt-1.5">
                         {[1, 2, 3, 4, 5].map((star) => (
                           <button
                             key={star}
-                            type="button;button"
+                            type="button"
                             onClick={() => setRating(star)}
                             className="text-amber-400 hover:scale-110 transition-transform cursor-pointer"
                           >
@@ -374,7 +361,6 @@ export default function DetailModal({ item, review, onClose, onSaveReview, onCha
                       </div>
                     </div>
 
-                    {/* Calendar Date selection */}
                     <div>
                       <label className="text-xs font-bold text-slate-400 block mb-1.5 flex items-center gap-1 font-mono">
                         <Calendar className="w-3.5 h-3.5 text-slate-500" />
@@ -390,7 +376,6 @@ export default function DetailModal({ item, review, onClose, onSaveReview, onCha
                   </motion.div>
                 )}
 
-                {/* Thoughts notes text area */}
                 <div>
                   <label className="text-xs font-bold text-slate-400 block mb-2">
                     作品への感想・メモ
@@ -398,7 +383,7 @@ export default function DetailModal({ item, review, onClose, onSaveReview, onCha
                   <textarea
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
-                    placeholder="感想、覚えておきたい劇中の重要な伏線やマルチバースへの派生展開など、自由に記入してください。ネタバレ感想も大歓迎です！"
+                    placeholder="感想、覚えておきたい伏線やキャラクターの掛け合いなど自由に記入できます。"
                     rows={4}
                     className="w-full bg-slate-950 hover:bg-slate-900/50 focus:bg-slate-950 text-slate-200 text-sm border border-slate-800 rounded-xl p-3.5 outline-none transition-all placeholder:text-slate-600 focus:border-slate-700"
                   />
@@ -408,13 +393,14 @@ export default function DetailModal({ item, review, onClose, onSaveReview, onCha
           </div>
         </div>
 
-        {/* Modal Footer (Action Panel) */}
+        {/* Modal Footer */}
         <div className="p-4 bg-slate-950 border-t border-slate-850 flex items-center justify-between">
           <span className="text-[10px] text-slate-600 font-mono">
             {isUpcoming ? 'ステータス: 未公開（今後の公開予定）' : `最終更新: ${review?.updatedAt ? new Date(review.updatedAt).toLocaleDateString('ja-JP') : '記録なし'}`}
           </span>
           <div className="flex items-center gap-3">
             <button
+              type="button"
               onClick={onClose}
               className="px-4 py-2 border border-slate-800 rounded-xl text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-900 cursor-pointer transition-colors"
             >
@@ -422,6 +408,7 @@ export default function DetailModal({ item, review, onClose, onSaveReview, onCha
             </button>
             {!isUpcoming && (
               <button
+                type="button"
                 onClick={handleSave}
                 className={`flex items-center gap-1.5 px-5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                   isSaved

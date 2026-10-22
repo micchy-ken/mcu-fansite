@@ -11,7 +11,7 @@ interface StatsSectionProps {
 export default function StatsSection({ items, reviews }: StatsSectionProps) {
   const todayStr = new Date().toISOString().split('T')[0];
   
-  // Filter only released items for core percentage metrics (upcoming ones don't affect progress)
+  // Filter only released items for core percentage metrics
   const releasedItems = items.filter(item => item.releaseDate <= todayStr);
   const total = releasedItems.length;
   const watchedCount = releasedItems.filter(item => reviews[item.id]?.watched).length;
@@ -88,7 +88,7 @@ export default function StatsSection({ items, reviews }: StatsSectionProps) {
         </div>
       </motion.div>
 
-      {/* Type Breakdown (Movies vs Series) */}
+      {/* Type Breakdown */}
       <motion.div
         initial={{ opacity: 0, y: 15 }}
         animate={{ opacity: 1, y: 0 }}
@@ -101,7 +101,6 @@ export default function StatsSection({ items, reviews }: StatsSectionProps) {
         </div>
 
         <div className="space-y-4 my-4">
-          {/* Movie progress */}
           <div>
             <div className="flex justify-between items-center text-sm mb-1">
               <span className="flex items-center gap-1.5 font-medium text-slate-300">
@@ -119,7 +118,6 @@ export default function StatsSection({ items, reviews }: StatsSectionProps) {
             </div>
           </div>
 
-          {/* Series/Drama progress */}
           <div>
             <div className="flex justify-between items-center text-sm mb-1">
               <span className="flex items-center gap-1.5 font-medium text-slate-300">
@@ -159,7 +157,6 @@ export default function StatsSection({ items, reviews }: StatsSectionProps) {
         <div className="grid grid-cols-6 gap-2 my-4">
           {phaseStats.map(ph => (
             <div key={ph.phase} className="flex flex-col items-center">
-              {/* Vertical Progress Bar */}
               <div className="w-4 bg-slate-950 h-20 rounded-full overflow-hidden relative flex flex-col justify-end border border-slate-850">
                 <motion.div
                   initial={{ height: 0 }}

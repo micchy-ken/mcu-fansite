@@ -5,6 +5,7 @@ import { UserReview } from '../types';
 import { mcuExtraDataMap, charactersDb } from '../mcuExtraData';
 
 interface McuCardProps {
+  key?: string;
   item: McuItem;
   review?: UserReview;
   orderType: 'release' | 'chrono';
@@ -95,7 +96,7 @@ export default function McuCard({
       }}
       className={`group relative bg-slate-900 rounded-xl border transition-all duration-200 overflow-hidden cursor-pointer ${
         isUpcoming
-          ? 'opacity-75 border-dashed border-slate-700 hover:border-slate-600'
+          ? 'opacity-80 border-dashed border-slate-700 hover:border-slate-600'
           : isWatched 
             ? 'border-emerald-500/50' 
             : 'border-slate-800 hover:border-slate-700'
@@ -104,7 +105,7 @@ export default function McuCard({
       {/* Decorative colored top line based on type */}
       <div className="h-1 w-full" style={{ backgroundColor: extra.accentColor }} />
 
-      {/* Clean Structured Header Row (Guarantees zero overlapping) */}
+      {/* Clean Structured Header Row */}
       <div className="px-4 py-3 flex items-center justify-between gap-1.5 border-b border-slate-850/40 bg-slate-950/20">
         {/* Left: Index Badge & Hero Icon Motif */}
         <div className="flex items-center gap-1.5 min-w-0">
@@ -138,7 +139,7 @@ export default function McuCard({
                 className={`flex items-center justify-center p-1.5 rounded-md border transition-all duration-200 cursor-pointer ${
                   isFavorite
                     ? 'bg-rose-950/50 border-rose-500/45 text-rose-400 hover:bg-rose-950/70'
-                    : 'bg-slate-950 text-slate-400 border-slate-800 hover:border-slate-700 hover:text-rose-455'
+                    : 'bg-slate-950 text-slate-400 border-slate-800 hover:border-slate-700 hover:text-rose-400'
                 }`}
                 title={isFavorite ? 'お気に入りから外す' : 'お気に入りに追加'}
               >
@@ -202,12 +203,12 @@ export default function McuCard({
             <span className="line-clamp-1 mt-0.5 text-slate-300 font-medium">{item.chronoSetting}</span>
           </div>
 
-          {/* Characters (登場人物リンク) */}
+          {/* Characters */}
           {extra.characterIds.length > 0 && (
             <div className="mt-3.5">
               <span className="text-[9px] uppercase text-slate-500 block font-bold font-mono mb-1">主要な登場キャラクター</span>
               <div className="flex flex-wrap gap-1">
-                {extra.characterIds.slice(0, 4).map(charId => {
+                {extra.characterIds.slice(0, 4).map((charId: string) => {
                   const char = charactersDb[charId];
                   if (!char) return null;
                   const isSelected = selectedCharacterId === charId;
@@ -215,6 +216,7 @@ export default function McuCard({
                   return (
                     <button
                       key={charId}
+                      type="button"
                       onClick={(e) => {
                         e.stopPropagation();
                         if (onCharacterClick) {
