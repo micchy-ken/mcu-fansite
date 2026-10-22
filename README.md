@@ -1,20 +1,35 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://ai.google.dev/static/site-assets/images/share-ais-513315318.png" />
-</div>
+# MCU 鑑賞ガイド ＆ 時系列トラッカー (MCU Watch Guide & Timeline Tracker)
 
-# Run and deploy your AI Studio app
+マーベル・シネマティック・ユニバース（MCU）全66作品（フェーズ1〜6、2008年〜2028年公開予定まで）を網羅した、ファン向け鑑賞管理・時系列トラッキング・パーソナルダッシュボードアプリです。
 
-This contains everything you need to run your app locally.
+## ✨ 主な機能
 
-View your app in AI Studio: https://ai.studio/apps/447e3242-026b-4afb-8d1d-8cf918b49e7e
+- 🎬 **全66作品のデータベース**: 映画・ドラマ・スペシャル・ア animated作品を完全網羅（『キャプテン・アメリカ：ブレイブ・ニュー・ワールド』『サンダーボルツ*』『ファンタスティック・フォー：ファースト・ステップス』『アベンジャーズ：ドゥームズデイ』『アベンジャーズ：シークレット・ウォーズ』等含む）。
+- ⏱️ **柔軟なソート＆フィルター**: 公開順・劇中時系列順のワンクリック切り替え、フェーズ（Phase 1〜6）別フィルター、作品タイプ別フィルター。
+- 🦸 **登場キャラクターフィルター**: アイアンマン、キャプテン・アメリカ、デッドプール、ウルヴァリン、ウルヴァリン、ドクター・ドゥームなどの主要ヒーロー・ヴィランの登場作品抽出。
+- 📝 **鑑賞記録＆スター評価**: 鑑賞ステータス（未視聴 / 視聴中 / 鑑賞済み）、マイ評価（★1〜5）、個人的な感想・ノートのローカル保存（データ自動引き継ぎ・安全保護）。
+- 🤖 **Gemini AI 連携スマート検索・マスター同期**: 最新のMCU公開予定情報や新作品の自動補完・AI生成登録。
+- 📊 **鑑賞統計ダッシュボード**: 全体進捗率、映画・ドラマ別の読了率、平均評価、フェーズごとの達成度をビジュアル表示。
+- 💾 **データバックアップ＆データ同期**: ユーザーデータのJSONエクスポート・インポート機能、マスターDBとの最新情報同期機能。
 
-## Run Locally
+## 🚀 開発・ローカル実行
 
-**Prerequisites:**  Node.js
+```bash
+# 依存関係のインストール
+npm install
 
+# 開発サーバーの起動 (ポート 3000)
+npm run dev
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+# プロダクションビルド
+npm run build
+
+# ビルド検証 (TypeScript チェック)
+npm run lint
+```
+
+## 🛠️ テクノロジー
+
+- **Frontend**: React 19, TypeScript, Vite, Tailwind CSS, Lucide React, Motion
+- **Backend**: Express, Node.js, `@google/genai` (Gemini 2.5 Flash)
+- **Data Persistence**: LocalStorage with schema versioning & non-destructive migration (`2026.10-v4`)
