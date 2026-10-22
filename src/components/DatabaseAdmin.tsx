@@ -2,212 +2,24 @@ import React, { useState, useRef } from 'react';
 import { 
   Plus, Trash2, Edit3, Save, RotateCcw, Download, Check, HelpCircle, AlertCircle, Database, ArrowUpRight, Sparkles, RefreshCw, X, Upload
 } from 'lucide-react';
-import { McuItem } from '../mcuData';
-import { ExtraItemData, charactersDb } from '../mcuExtraData';
+import { mcuItems, McuItem } from '../mcuData';
+import { mcuExtraDataMap, ExtraItemData, charactersDb } from '../mcuExtraData';
 import { UserReviewsState } from '../types';
 
-const OFFICIAL_MCU_PRESETS = [
-  {
-    id: 'captain_america_bnw',
-    titleJa: 'キャプテン・アメリカ：ブレイブ・ニュー・ワールド',
-    titleEn: 'Captain America: Brave New World',
-    type: 'movie',
-    releaseDate: '2025-02-14',
-    chronoOrder: 47,
-    chronoSetting: '2026年（サムが重責を担う新たなキャプテン・アメリカ時代）',
-    phase: 5,
-    importance: 3,
-    importanceReason: 'サム・ウィルソンが新たなキャプテン・アメリカとして自立する映画。サディアス・ロス（レッドハルク）との直接対決が描かれる最重要作。',
-    synopsis: 'キャプテン・アメリカを継承したサムは大統領との会談後、巨大な国際陰謀に引きずり込まれる。世界一危険な「レッドハルク」の誕生、そして新生アベンジャーズ再建への足がかりとなる一作！',
-    directorOrCreator: 'ジュリアス・オナ',
-    durationOrEpisodes: '1時間58分',
-    officialUrl: 'https://marvel.disney.co.jp/movie/captain-america-bnw',
-    explanationUrlQuery: 'キャプテンアメリカ ブレイブニューワールド ネタバレ 考察 レッドハルク',
-    heroIcon: '🦅',
-    accentColor: '#3b82f6',
-    characterIds: ['sam_wilson', 'thaddeus_ross', 'bucky_barnes']
-  },
-  {
-    id: 'daredevil_born_again',
-    titleJa: 'デアデビル：ボーン・アゲイン',
-    titleEn: 'Daredevil: Born Again',
-    type: 'drama',
-    releaseDate: '2025-03-04',
-    chronoOrder: 48,
-    chronoSetting: '2026年（ニューヨーク裏社会、市長となったキングピンとの法廷・肉体戦）',
-    phase: 5,
-    importance: 2,
-    importanceReason: 'Netflix版から完全にアラインされMCU本流へ合流を果たした傑作アクションドラマ。',
-    synopsis: '盲目の優秀な弁護士マット・マードックは、夜はクライムファイター「デアデビル」となる。ニューヨーク市長となり法を悪用するキングピンとの緊迫した攻防。',
-    directorOrCreator: 'ダリオ・スカルダペイン',
-    durationOrEpisodes: '全9話（シーズン1）',
-    officialUrl: 'https://marvel.disney.co.jp/movie/daredevil-born-again',
-    explanationUrlQuery: 'デアデビル ボーンアゲイン ネタバレ 考察 キングピン',
-    heroIcon: '👿',
-    accentColor: '#dc2626',
-    characterIds: ['matt_murdock', 'kingpin']
-  },
-  {
-    id: 'thunderbolts',
-    titleJa: 'サンダーボルツ*',
-    titleEn: 'Thunderbolts*',
-    type: 'movie',
-    releaseDate: '2025-05-02',
-    chronoOrder: 49,
-    chronoSetting: '2026年（過去に苦しんだはみ出し者たち・影の政府任務）',
-    phase: 5,
-    importance: 3,
-    importanceReason: '傷だらけのアンチヒーローたちが不本意ながら最凶タスクチームを結成。今後のアベンジャーズへ派生する重要な伏線が満載。',
-    synopsis: 'エレーナ、バッキー、USエージェント、ゴースト、タスクマスターらが招集され、生き残りを掛けた非公式危険ミッションへ投じられるアクションエンターテインメント！',
-    directorOrCreator: 'ジェイク・シュライアー',
-    durationOrEpisodes: '2時間12分',
-    officialUrl: 'https://marvel.disney.co.jp/movie/thunderbolts',
-    explanationUrlQuery: 'サンダーボルツ アスタリスク ネタバレ 考察 結末',
-    heroIcon: '⚡',
-    accentColor: '#10b981',
-    characterIds: ['bucky_barnes', 'sam_wilson']
-  },
-  {
-    id: 'fantastic_four_fs',
-    titleJa: 'ファンタスティック・フォー：ファースト・ステップス',
-    titleEn: 'The Fantastic Four: First Steps',
-    type: 'movie',
-    releaseDate: '2025-07-25',
-    chronoOrder: 50,
-    chronoSetting: '1960年代のレトロフューチャーな異次元パラレルワールド',
-    phase: 6,
-    importance: 3,
-    importanceReason: 'フェーズ6の最重要開拓者。マルチバースを超えて全宇宙を支配せんとする神ギャラクタスとの激戦。',
-    synopsis: '1960年代의 パラレル世界に生きる4人の宇宙英雄チーム。宇宙を喰らう魔神ギャラクタスとその使者シルバーサーファーから世界を救う。',
-    directorOrCreator: 'マット・シャックマン',
-    durationOrEpisodes: '2時間10分',
-    officialUrl: 'https://marvel.disney.co.jp/movie/fantastic-four',
-    explanationUrlQuery: 'ファンタスティックフォー ファーストステップス ネタバレ 考察 結末',
-    heroIcon: '4️⃣',
-    accentColor: '#0ea5e9',
-    characterIds: ['reed_richards', 'doctor_doom']
-  },
-  {
-    id: 'eyes_of_wakanda',
-    titleJa: 'アイズ・オブ・ワカンダ（原題）',
-    titleEn: 'Eyes of Wakanda',
-    type: 'drama',
-    releaseDate: '2025-08-06',
-    chronoOrder: 51,
-    chronoSetting: 'ワカンダ王国が数千年にわたり培ってきた高潔な歴史・過去',
-    phase: 5,
-    importance: 2,
-    importanceReason: 'ワカンダ王国の歴代戦士たちの足跡を辿る初のハイクオリティ・アニメーションシリーズ。',
-    synopsis: '世界中からビブラニウム回収という秘密指令を受けた歴代のワカンダ戦士たち。彼らの過去・誇り・過酷な戦いを描く。',
-    directorOrCreator: 'ライアン・クーグラー（製作・監修）',
-    durationOrEpisodes: '全4話',
-    officialUrl: 'https://marvel.disney.co.jp/',
-    explanationUrlQuery: 'アイズオブワカンダ 考察 ネタバレ',
-    heroIcon: '🐆',
-    accentColor: '#f59e0b',
-    characterIds: ['shuri']
-  },
-  {
-    id: 'ironheart',
-    titleJa: 'アイアンハート',
-    titleEn: 'Ironheart',
-    type: 'drama',
-    releaseDate: '2025-09-03',
-    chronoOrder: 52,
-    chronoSetting: '2026年（ブラックパンサー／ワカンダ・フォーエバーの直接の続編）',
-    phase: 5,
-    importance: 2,
-    importanceReason: 'リリ・ウィリアムズが独自のアイアンマンスーツを発展、テクノロジーと魔術世界「ザ・フード」との戦い。',
-    synopsis: 'MITの天才学生リリは、自家製の高性能アーマースーツを開発。かつてワカンダで宇宙的な戦いをくぐり抜けた彼女のシカゴを舞台にした活躍。',
-    directorOrCreator: 'チナカ・ホッジ',
-    durationOrEpisodes: '全6話',
-    officialUrl: 'https://marvel.disney.co.jp/movie/ironheart',
-    explanationUrlQuery: 'アイアンハート ドラマ ネタバレ 考察',
-    heroIcon: '🦾',
-    accentColor: '#ec4899',
-    characterIds: ['riri_williams']
-  },
-  {
-    id: 'wonder_man',
-    titleJa: 'ワンダーマン（原題）',
-    titleEn: 'Wonder Man',
-    type: 'drama',
-    releaseDate: '2025-12-17',
-    chronoOrder: 53,
-    chronoSetting: '2026年（ハリウッドの映画界、ヒーロー文化がビジネス化した世界）',
-    phase: 5,
-    importance: 1,
-    importanceReason: 'ハリウッドのスタント・アクターであり、超人的パワーを手にした男のコミカルでユニークな異色のMCU作品。',
-    synopsis: 'スタントマンであり俳優を夢見るサイモン・ウィリアムズは偶然超パワーを得てしまい、「ワンダーマン」として意図せず活躍していく。',
-    directorOrCreator: 'デスティン・ダニエル・クレットン',
-    durationOrEpisodes: '全8話',
-    officialUrl: 'https://marvel.disney.co.jp/',
-    explanationUrlQuery: 'ワンダーマン 考察 ドラマ',
-    heroIcon: '🔋',
-    accentColor: '#a855f7',
-    characterIds: []
-  },
-  {
-    id: 'avengers_doomsday',
-    titleJa: 'アベンジャーズ：ドゥームズデイ',
-    titleEn: 'Avengers: Doomsday',
-    type: 'movie',
-    releaseDate: '2026-05-01',
-    chronoOrder: 54,
-    chronoSetting: '2026〜2027年（マルチバース全体の破滅と衝突の幕開け）',
-    phase: 6,
-    importance: 3,
-    importanceReason: 'ロバート・ダウニー・Jrがドクター・ドゥームとして奇跡の電撃復帰を遂げ、映画『アベンジャーズ』第5作として降臨。',
-    synopsis: 'あらゆる次元を滅ぼさんとする皇帝ビクター・フォン・ドゥーム。ファンタスティックフォーやスパイダーマン、アベンジャーズが窮地に陥る史上最大級の一大決戦！',
-    directorOrCreator: 'アンソニー＆ジョー・ルッソ',
-    durationOrEpisodes: '2時間35分',
-    officialUrl: 'https://marvel.disney.co.jp/movie/avengers-doomsday',
-    explanationUrlQuery: 'アベンジャーズ ドゥームズデイ ネタバレ 考察 ドクタードゥーム',
-    heroIcon: '🛡️',
+const OFFICIAL_MCU_PRESETS = mcuItems.map(item => {
+  const extra = mcuExtraDataMap[item.id] || {
+    heroIcon: '🎬',
+    heroIconName: 'Film',
     accentColor: '#ef4444',
-    characterIds: ['doctor_doom', 'reed_richards', 'peter_parker', 'stephen_strange', 'bruce_banner', 'thor']
-  },
-  {
-    id: 'spider_man_4',
-    titleJa: 'スパイダーマン4（仮）',
-    titleEn: 'Spider-Man 4 (MCU)',
-    type: 'movie',
-    releaseDate: '2026-07-24',
-    chronoOrder: 55,
-    chronoSetting: '2027年（記憶を失った孤独なピーター・パーカーが親愛なる隣人として奮闘する新章）',
-    phase: 6,
-    importance: 3,
-    importanceReason: 'ピーター・パーカーの「忘却」のその後の新たな三部作第1弾。ドゥームズデイ直後のマルチバース情勢と密接に関係する超特大映画。',
-    synopsis: '全世界から正体を忘れられ、一人ぼっちで闘い続けるピーター・パーカー。新たなる親愛なる隣人としての闘い、そして再会への道を拓く！',
-    directorOrCreator: 'デスティン・ダニエル・クレットン',
-    durationOrEpisodes: '2時間10分',
-    officialUrl: 'https://marvel.disney.co.jp/',
-    explanationUrlQuery: 'スパイダーマン4 キャスト マーベル ネタバレ 考察',
-    heroIcon: '🕷️',
-    accentColor: '#f43f5e',
-    characterIds: ['peter_parker', 'stephen_strange']
-  },
-  {
-    id: 'avengers_secret_wars',
-    titleJa: 'アベンジャーズ：シークレット・ウォーズ',
-    titleEn: 'Avengers: Secret Wars',
-    type: 'movie',
-    releaseDate: '2027-05-07',
-    chronoOrder: 56,
-    chronoSetting: '時空を超えあらゆる並行宇宙が融合した究極の世界「バトルワールド」',
-    phase: 6,
-    importance: 3,
-    importanceReason: 'マルチバース・サーガ本当のグランドフィナーレ。デッドプールやウルヴァリン、スパイダーマン新旧、全ヒーローが生き残りを賭けて大激突する極限の3時間。',
-    synopsis: 'インカージョンによりマルチバースが完璧に破壊され、ドゥームが築き上げたバトルワールド。全タイムラインの覇権、転移、そして生存を掛けた最終頂上戦争！',
-    directorOrCreator: 'アンソニー＆ジョー・ルッソ',
-    durationOrEpisodes: '2時間55分',
-    officialUrl: 'https://marvel.disney.co.jp/movie/avengers-secret-wars',
-    explanationUrlQuery: 'アベンジャーズ シークレットウォーズ ネタバレ 考察 結慢 新世界',
-    heroIcon: '💀',
-    accentColor: '#6366f1',
-    characterIds: ['doctor_doom', 'reed_richards', 'peter_parker', 'deadpool', 'wolverine', 'thor', 'loki']
-  }
-];
+    characterIds: []
+  };
+  return {
+    ...item,
+    heroIcon: extra.heroIcon,
+    accentColor: extra.accentColor,
+    characterIds: extra.characterIds
+  };
+});
 
 interface DatabaseAdminProps {
   items: McuItem[];
@@ -216,9 +28,10 @@ interface DatabaseAdminProps {
   onResetDb: () => void;
   reviews: UserReviewsState;
   onUpdateReviews: (updatedReviews: UserReviewsState) => void;
+  onSyncMasterData?: () => void;
 }
 
-export default function DatabaseAdmin({ items, extraMap, onUpdateDb, onResetDb, reviews, onUpdateReviews }: DatabaseAdminProps) {
+export default function DatabaseAdmin({ items, extraMap, onUpdateDb, onResetDb, reviews, onUpdateReviews, onSyncMasterData }: DatabaseAdminProps) {
   const [selectedId, setSelectedId] = useState<string>('');
   const [isEditing, setIsEditing] = useState(false);
   const [isAddingNew, setIsAddingNew] = useState(false);

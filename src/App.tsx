@@ -4,7 +4,7 @@ import {
   Search, SlidersHorizontal, ListOrdered, Calendar, 
   MessageSquare, Flame, Tv, Film, RotateCcw, Award, CheckSquare, Check, 
   Grid, List, Sparkles, Star, Heart, FileText, ChevronRight, UserMinus, Database, HelpCircle,
-  Sun, Moon
+  Sun, Moon, X
 } from 'lucide-react';
 import { mcuItems, McuItem } from './mcuData';
 import { UserReviewsState, FilterState, SortOrder, UserReview } from './types';
@@ -14,6 +14,8 @@ import McuCard from './components/McuCard';
 import DetailModal from './components/DetailModal';
 import DatabaseAdmin from './components/DatabaseAdmin';
 import HelpPage from './components/HelpPage';
+
+const CURRENT_MCU_DATA_VERSION = '2026.10-v4';
 
 export default function App() {
   // --- STATES ---
@@ -30,6 +32,7 @@ export default function App() {
   // Dynamic database states
   const [dbItems, setDbItems] = useState<McuItem[]>([]);
   const [extraMap, setExtraMap] = useState<Record<string, ExtraItemData>>({});
+  const [showUpdateNotice, setShowUpdateNotice] = useState<boolean>(false);
 
   // Theme states
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
@@ -54,50 +57,93 @@ export default function App() {
     watchedStatus: 'all',
   });
 
-  // --- DATABASE LOCAL STORAGE HANDLING ---
+  // --- DATABASE LOCAL STORAGE & VERSION MIGRATION ---
   useEffect(() => {
     try {
+      const storedVersion = localStorage.getItem('mcu_db_version');
       const storedItems = localStorage.getItem('mcu_custom_db_items');
       const storedExtra = localStorage.getItem('mcu_custom_db_extra');
-      
-      let finalItems: McuItem[] = [...mcuItems];
-      let finalExtra: Record<string, ExtraItemData> = { ...mcuExtraDataMap };
 
-      if (storedItems) {
-        const parsedItems = JSON.parse(storedItems) as McuItem[];
-        // Find items that exist in the hardcoded data but not in local storage
-        const storedIds = new Set(parsedItems.map((item: any) => item.id));
-        const missingItems = mcuItems.filter((item: any) => !storedIds.has(item.id));
-        
-        // To also apply the fix for removed "releaseOrder", we map parsedItems
-        const cleanParsedItems = parsedItems.map((item: any) => {
-          // You could delete item.releaseOrder here, but setting the DB is sufficient
-          return item;
-        });
+      if (storedVersion !== CURRENT_MCU_DATA_VERSION) {
+        // Migration: retain custom user additions while upgrading canonical items to current mcuItems
+        let customUserItems: McuItem[] = [];
+        let customUserExtra: Record<string, ExtraItemData> = {};
 
-        finalItems = [...cleanParsedItems, ...missingItems];
+        if (storedItems) {
+          try {
+            const parsed = JSON.parse(storedItems) as McuItem[];
+            const canonicalIds = new Set(mcuItems.map(x => x.id));
+            customUserItems = parsed.filter(item => !canonicalIds.has(item.id));
+          } catch (e) {
+            console.error('Failed to parse old stored items during migration:', e);
+          }
+        }
+
+        if (storedExtra) {
+          try {
+            const parsedExtra = JSON.parse(storedExtra);
+            Object.keys(parsedExtra).forEach(k => {
+              if (!mcuExtraDataMap[k]) {
+                customUserExtra[k] = parsedExtra[k];
+              }
+            });
+          } catch (e) {
+            console.error('Failed to parse old stored extra map during migration:', e);
+          }
+        }
+
+        const mergedItems = [...mcuItems, ...customUserItems].sort(
+          (a, b) => new Date(a.releaseDate).getTime() - new Date(b.releaseDate).getTime()
+        );
+        const mergedExtra = { ...mcuExtraDataMap, ...customUserExtra };
+
+        setDbItems(mergedItems);
+        setExtraMap(mergedExtra);
+
+        localStorage.setItem('mcu_custom_db_items', JSON.stringify(mergedItems));
+        localStorage.setItem('mcu_custom_db_extra', JSON.stringify(mergedExtra));
+        localStorage.setItem('mcu_db_version', CURRENT_MCU_DATA_VERSION);
+        setShowUpdateNotice(true);
+      } else {
+        let finalItems: McuItem[] = [...mcuItems];
+        let finalExtra: Record<string, ExtraItemData> = { ...mcuExtraDataMap };
+
+        if (storedItems) {
+          const parsedItems = JSON.parse(storedItems) as McuItem[];
+          const storedIds = new Set(parsedItems.map((item: any) => item.id));
+          const missingItems = mcuItems.filter((item: any) => !storedIds.has(item.id));
+          finalItems = [...parsedItems, ...missingItems];
+        }
+
+        if (storedExtra) {
+          const parsedExtra = JSON.parse(storedExtra);
+          finalExtra = { ...mcuExtraDataMap, ...parsedExtra };
+        }
+
+        finalItems.sort((a, b) => new Date(a.releaseDate).getTime() - new Date(b.releaseDate).getTime());
+
+        setDbItems(finalItems);
+        setExtraMap(finalExtra);
       }
-
-      if (storedExtra) {
-        const parsedExtra = JSON.parse(storedExtra);
-        finalExtra = { ...mcuExtraDataMap, ...parsedExtra };
-      }
-
-      // Sort just in case added items break the order
-      finalItems.sort((a, b) => new Date(a.releaseDate).getTime() - new Date(b.releaseDate).getTime());
-
-      setDbItems(finalItems);
-      setExtraMap(finalExtra);
-      
-      // Resync updated combined data to local storage
-      localStorage.setItem('mcu_custom_db_items', JSON.stringify(finalItems));
-      localStorage.setItem('mcu_custom_db_extra', JSON.stringify(finalExtra));
     } catch (e) {
       console.error('Failed to load custom database:', e);
       setDbItems(mcuItems);
       setExtraMap(mcuExtraDataMap);
     }
   }, []);
+
+  const handleForceSyncMaster = () => {
+    const mergedItems = [...mcuItems].sort(
+      (a, b) => new Date(a.releaseDate).getTime() - new Date(b.releaseDate).getTime()
+    );
+    const mergedExtra = { ...mcuExtraDataMap };
+    setDbItems(mergedItems);
+    setExtraMap(mergedExtra);
+    localStorage.setItem('mcu_custom_db_items', JSON.stringify(mergedItems));
+    localStorage.setItem('mcu_custom_db_extra', JSON.stringify(mergedExtra));
+    localStorage.setItem('mcu_db_version', CURRENT_MCU_DATA_VERSION);
+    alert('マスターデータベースの全66作品データを最新状態に同期完了しました！既存の鑑賞・レビュー記録は保持されています。');
+  };
 
   const handleUpdateDb = (updatedItems: McuItem[], updatedExtra: Record<string, ExtraItemData>) => {
     setDbItems(updatedItems);
@@ -116,6 +162,7 @@ export default function App() {
     try {
       localStorage.removeItem('mcu_custom_db_items');
       localStorage.removeItem('mcu_custom_db_extra');
+      localStorage.setItem('mcu_db_version', CURRENT_MCU_DATA_VERSION);
     } catch (e) {
       console.error('Failed to reset DB:', e);
     }
@@ -382,6 +429,32 @@ export default function App() {
       {/* Main Container */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         
+        {/* Version Update Notification Banner */}
+        {showUpdateNotice && (
+          <div className="mb-6 bg-gradient-to-r from-amber-950/60 via-red-950/40 to-slate-900 border border-amber-500/30 rounded-2xl p-4 shadow-lg flex items-start justify-between gap-4 animate-fade-in font-sans">
+            <div className="flex items-start gap-3">
+              <div className="bg-amber-500/20 text-amber-400 p-2 rounded-xl shrink-0 mt-0.5">
+                <Sparkles className="w-5 h-5" />
+              </div>
+              <div className="space-y-1">
+                <h3 className="text-sm font-bold text-amber-200">
+                  MCUデータベース最新版（全66作品）へアップデート完了！
+                </h3>
+                <p className="text-xs text-slate-300 leading-relaxed">
+                  2024〜2028年の最新公開予定作品（『キャプテン・アメリカ：ブレイブ・ニュー・ワールド』『サンダーボルツ*』『ファンタスティック・フォー』『アベンジャーズ：ドゥームズデイ』『スパイダーマン4』『デアデビル：ボーン・アゲイン』等）をすべて最新情報に登録・更新しました。既存の鑑賞記録・レビューは100%保持されています。
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => setShowUpdateNotice(false)}
+              className="text-slate-400 hover:text-slate-200 p-1 rounded-lg hover:bg-slate-800 transition-all shrink-0 cursor-pointer"
+              title="通知を閉じる"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+
         {/* Statistics Section */}
         <StatsSection items={dbItems} reviews={reviews} />
 
@@ -910,6 +983,7 @@ export default function App() {
             onResetDb={handleResetDb}
             reviews={reviews}
             onUpdateReviews={saveReviews}
+            onSyncMasterData={handleForceSyncMaster}
           />
         )}
 

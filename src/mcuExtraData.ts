@@ -8,7 +8,7 @@ export interface CharacterInfo {
 export interface ExtraItemData {
   heroIcon: string;      // 絵文字やシンボル
   heroIconName: string;  // Lucideアイコン名（フォールバック用）
-  accentColor: string;   // テザーカラー (Tailwind border/text等で使用)
+  accentColor: string;   // テーマカラー (Tailwind border/text等で使用)
   characterIds: string[]; // 登場キャラクターのID
 }
 
@@ -25,7 +25,7 @@ export const charactersDb: Record<string, CharacterInfo> = {
   jane_foster: { id: 'jane_foster', nameJa: 'ジェーン・フォスター', heroNameJa: 'マイティ・ジェーン', emoji: '🔨' },
   wanda_maximoff: { id: 'wanda_maximoff', nameJa: 'ワンダ・マキシモフ', heroNameJa: 'スカーレット・ウィッチ', emoji: '🔮' },
   vision: { id: 'vision', nameJa: 'ヴィジョン', heroNameJa: 'ヴィジョン', emoji: '💎' },
-  sam_wilson: { id: 'sam_wilson', nameJa: 'サム・ウィルソン', heroNameJa: 'ファルコン / キャプテン・アメリカ', emoji: '🦅' },
+  sam_wilson: { id: 'sam_wilson', nameJa: 'サム・ウィルソン', heroNameJa: 'キャプテン・アメリカ', emoji: '🦅' },
   bucky_barnes: { id: 'bucky_barnes', nameJa: 'バッキー・バーンズ', heroNameJa: 'ウィンター・ソルジャー', emoji: '🦾' },
   james_rhodes: { id: 'james_rhodes', nameJa: 'ジェームズ・ローズ', heroNameJa: 'ウォーマシン', emoji: '⚙️' },
   peter_parker: { id: 'peter_parker', nameJa: 'ピーター・パーカー', heroNameJa: 'スパイダーマン', emoji: '🕸️' },
@@ -57,7 +57,11 @@ export const charactersDb: Record<string, CharacterInfo> = {
   riri_williams: { id: 'riri_williams', nameJa: 'リリ・ウィリアムズ', heroNameJa: 'アイアンハート', emoji: '⚙️' },
   kingpin: { id: 'kingpin', nameJa: 'ウィルソン・フィスク', heroNameJa: 'キングピン', emoji: '🕶️' },
   reed_richards: { id: 'reed_richards', nameJa: 'リード・リチャーズ', heroNameJa: 'ミスター・ファンタスティック', emoji: '4️⃣' },
-  doctor_doom: { id: 'doctor_doom', nameJa: 'ビクター・ドゥーム', heroNameJa: 'ドクター・ドゥーム', emoji: '🎭' }
+  doctor_doom: { id: 'doctor_doom', nameJa: 'ビクター・ドゥーム', heroNameJa: 'ドクター・ドゥーム', emoji: '🎭' },
+  blade: { id: 'blade', nameJa: 'エリック・ブルックス', heroNameJa: 'ブレイド', emoji: '🗡️' },
+  simon_williams: { id: 'simon_williams', nameJa: 'サイモン・ウィリアムズ', heroNameJa: 'ワンダーマン', emoji: '🎬' },
+  maya_lopez: { id: 'maya_lopez', nameJa: 'マヤ・ロペス', heroNameJa: 'エコー', emoji: '🎯' },
+  jack_russell: { id: 'jack_russell', nameJa: 'ジャック・ラッセル', heroNameJa: 'ウェアウルフ', emoji: '🐺' }
 };
 
 export const mcuExtraDataMap: Record<string, ExtraItemData> = {
@@ -124,12 +128,6 @@ export const mcuExtraDataMap: Record<string, ExtraItemData> = {
     accentColor: '#ea580c',
     characterIds: ['peter_quill', 'gamora', 'rocket', 'groot', 'dra_x', 'nebula']
   },
-  guardians_of_the_galaxy_vol2: {
-    heroIcon: '🎧',
-    heroIconName: 'Music',
-    accentColor: '#ea580c',
-    characterIds: ['peter_quill', 'gamora', 'rocket', 'groot', 'dra_x', 'nebula', 'mantis']
-  },
   avengers_aou: {
     heroIcon: '💎',
     heroIconName: 'Grid',
@@ -150,17 +148,17 @@ export const mcuExtraDataMap: Record<string, ExtraItemData> = {
     accentColor: '#1f4e79',
     characterIds: ['steve_rogers', 'tony_stark', 'natasha_romanoff', 'sam_wilson', 'bucky_barnes', 'james_rhodes', 'clint_barton', 'wanda_maximoff', 'vision', 'peter_parker', 't_challa', 'scott_lang']
   },
-  black_widow: {
-    heroIcon: '🕷️',
-    heroIconName: 'Target',
-    accentColor: '#ef4444',
-    characterIds: ['natasha_romanoff', 'clint_barton']
+  doctor_strange: {
+    heroIcon: '👁️',
+    heroIconName: 'Sparkles',
+    accentColor: '#9013FE',
+    characterIds: ['stephen_strange', 'wong', 'thor']
   },
-  black_panther: {
-    heroIcon: '🐾',
-    heroIconName: 'Heart',
-    accentColor: '#8b5cf6',
-    characterIds: ['t_challa', 'shuri', 'okoye', 'bucky_barnes']
+  guardians_of_the_galaxy_vol2: {
+    heroIcon: '🎧',
+    heroIconName: 'Music',
+    accentColor: '#ea580c',
+    characterIds: ['peter_quill', 'gamora', 'rocket', 'groot', 'dra_x', 'nebula', 'mantis']
   },
   spider_man_hc: {
     heroIcon: '🕸️',
@@ -168,23 +166,17 @@ export const mcuExtraDataMap: Record<string, ExtraItemData> = {
     accentColor: '#ef4444',
     characterIds: ['peter_parker', 'tony_stark']
   },
-  doctor_strange: {
-    heroIcon: '👁️',
-    heroIconName: 'Sparkles',
-    accentColor: '#9013FE',
-    characterIds: ['stephen_strange', 'wong', 'thor']
-  },
   thor_ragnarok: {
     heroIcon: '🪐',
     heroIconName: 'Zap',
     accentColor: '#2b90d9',
     characterIds: ['thor', 'loki', 'bruce_banner', 'stephen_strange']
   },
-  ant_man_and_the_wasp: {
-    heroIcon: '🐝',
-    heroIconName: 'Activity',
-    accentColor: '#a855f7',
-    characterIds: ['scott_lang', 'hope_van_dyne']
+  black_panther: {
+    heroIcon: '🐾',
+    heroIconName: 'Heart',
+    accentColor: '#8b5cf6',
+    characterIds: ['t_challa', 'shuri', 'okoye', 'bucky_barnes']
   },
   avengers_iw: {
     heroIcon: '👑',
@@ -195,6 +187,12 @@ export const mcuExtraDataMap: Record<string, ExtraItemData> = {
       'sam_wilson', 'bucky_barnes', 'james_rhodes', 'peter_parker', 'stephen_strange', 'wong', 't_challa', 'shuri',
       'okoye', 'peter_quill', 'gamora', 'rocket', 'groot', 'dra_x', 'nebula', 'mantis'
     ]
+  },
+  ant_man_and_the_wasp: {
+    heroIcon: '🐝',
+    heroIconName: 'Activity',
+    accentColor: '#a855f7',
+    characterIds: ['scott_lang', 'hope_van_dyne']
   },
   captain_marvel: {
     heroIcon: '💫',
@@ -239,6 +237,18 @@ export const mcuExtraDataMap: Record<string, ExtraItemData> = {
     accentColor: '#10b981',
     characterIds: ['loki']
   },
+  black_widow: {
+    heroIcon: '🕷️',
+    heroIconName: 'Target',
+    accentColor: '#ef4444',
+    characterIds: ['natasha_romanoff', 'clint_barton']
+  },
+  what_if_s1: {
+    heroIcon: '👾',
+    heroIconName: 'Tv',
+    accentColor: '#a855f7',
+    characterIds: ['stephen_strange', 'thor', 'steve_rogers']
+  },
   shang_chi: {
     heroIcon: '⭕',
     heroIconName: 'Layers',
@@ -255,7 +265,7 @@ export const mcuExtraDataMap: Record<string, ExtraItemData> = {
     heroIcon: '🎯',
     heroIconName: 'Tv',
     accentColor: '#6d28d9',
-    characterIds: ['clint_barton', 'kate_bishop']
+    characterIds: ['clint_barton', 'kate_bishop', 'kingpin']
   },
   spider_man_nwh: {
     heroIcon: '🧬',
@@ -287,17 +297,35 @@ export const mcuExtraDataMap: Record<string, ExtraItemData> = {
     accentColor: '#06b6d4',
     characterIds: ['thor', 'jane_foster', 'peter_quill', 'nebula', 'mantis', 'dra_x', 'rocket', 'groot']
   },
+  i_am_groot_s1: {
+    heroIcon: '🌱',
+    heroIconName: 'Tv',
+    accentColor: '#22c55e',
+    characterIds: ['groot', 'rocket']
+  },
   she_hulk: {
     heroIcon: '⚖️',
     heroIconName: 'Tv',
     accentColor: '#22c55e',
     characterIds: ['jennifer_walters', 'bruce_banner', 'wong', 'matt_murdock']
   },
+  werewolf_by_night: {
+    heroIcon: '🐺',
+    heroIconName: 'Film',
+    accentColor: '#475569',
+    characterIds: ['jack_russell']
+  },
   black_panther_wf: {
     heroIcon: '🔱',
     heroIconName: 'Shield',
     accentColor: '#4f46e5',
-    characterIds: ['shuri', 'okoye']
+    characterIds: ['shuri', 'okoye', 'riri_williams']
+  },
+  gotg_holiday_special: {
+    heroIcon: '🎄',
+    heroIconName: 'Film',
+    accentColor: '#ea580c',
+    characterIds: ['peter_quill', 'mantis', 'dra_x', 'rocket', 'groot', 'nebula']
   },
 
   // --- PHASE 5 ---
@@ -319,6 +347,12 @@ export const mcuExtraDataMap: Record<string, ExtraItemData> = {
     accentColor: '#10b981',
     characterIds: ['nick_fury', 'james_rhodes']
   },
+  i_am_groot_s2: {
+    heroIcon: '🌿',
+    heroIconName: 'Tv',
+    accentColor: '#22c55e',
+    characterIds: ['groot']
+  },
   loki_s2: {
     heroIcon: '🎛️',
     heroIconName: 'Tv',
@@ -329,7 +363,19 @@ export const mcuExtraDataMap: Record<string, ExtraItemData> = {
     heroIcon: '🌌',
     heroIconName: 'Film',
     accentColor: '#f59e0b',
-    characterIds: ['carol_danvers', 'kamala_khan', 'nick_fury']
+    characterIds: ['carol_danvers', 'kamala_khan', 'nick_fury', 'kate_bishop']
+  },
+  what_if_s2: {
+    heroIcon: '🔮',
+    heroIconName: 'Tv',
+    accentColor: '#a855f7',
+    characterIds: ['stephen_strange', 'thor', 'wanda_maximoff']
+  },
+  echo: {
+    heroIcon: '🎯',
+    heroIconName: 'Tv',
+    accentColor: '#dc2626',
+    characterIds: ['maya_lopez', 'kingpin', 'matt_murdock']
   },
   deadpool_and_wolverine: {
     heroIcon: '⚔️',
@@ -341,7 +387,7 @@ export const mcuExtraDataMap: Record<string, ExtraItemData> = {
     heroIcon: '🧹',
     heroIconName: 'Tv',
     accentColor: '#5b21b6',
-    characterIds: ['agatha_harkness']
+    characterIds: ['agatha_harkness', 'wanda_maximoff']
   },
   what_if_s3: {
     heroIcon: '👾',
@@ -349,11 +395,17 @@ export const mcuExtraDataMap: Record<string, ExtraItemData> = {
     accentColor: '#a855f7',
     characterIds: ['stephen_strange', 'thor', 'bucky_barnes']
   },
+  your_friendly_neighborhood_spiderman: {
+    heroIcon: '🕷️',
+    heroIconName: 'Tv',
+    accentColor: '#ef4444',
+    characterIds: ['peter_parker', 'matt_murdock']
+  },
   captain_america_bnw: {
     heroIcon: '🦅',
     heroIconName: 'Shield',
     accentColor: '#1d4ed8',
-    characterIds: ['sam_wilson', 'thaddeus_ross']
+    characterIds: ['sam_wilson', 'thaddeus_ross', 'bucky_barnes']
   },
   daredevil_born_again: {
     heroIcon: '👹',
@@ -367,17 +419,43 @@ export const mcuExtraDataMap: Record<string, ExtraItemData> = {
     accentColor: '#475569',
     characterIds: ['bucky_barnes', 'thaddeus_ross']
   },
+  ironheart: {
+    heroIcon: '🦾',
+    heroIconName: 'Tv',
+    accentColor: '#dc2626',
+    characterIds: ['riri_williams']
+  },
+  eyes_of_wakanda: {
+    heroIcon: '🐾',
+    heroIconName: 'Tv',
+    accentColor: '#8b5cf6',
+    characterIds: ['shuri', 'okoye']
+  },
+  zombies: {
+    heroIcon: '🧟',
+    heroIconName: 'Tv',
+    accentColor: '#15803d',
+    characterIds: ['kate_bishop', 'kamala_khan', 'shang_chi']
+  },
+  wonder_man: {
+    heroIcon: '🎬',
+    heroIconName: 'Tv',
+    accentColor: '#9333ea',
+    characterIds: ['simon_williams']
+  },
+
+  // --- PHASE 6 ---
   fantastic_four_fs: {
     heroIcon: '🚀',
     heroIconName: 'Film',
     accentColor: '#2563eb',
     characterIds: ['reed_richards']
   },
-  ironheart: {
-    heroIcon: '🦾',
-    heroIconName: 'Tv',
-    accentColor: '#dc2626',
-    characterIds: ['riri_williams']
+  blade: {
+    heroIcon: '🗡️',
+    heroIconName: 'Film',
+    accentColor: '#0f172a',
+    characterIds: ['blade']
   },
   avengers_doomsday: {
     heroIcon: '🎭',
@@ -385,10 +463,22 @@ export const mcuExtraDataMap: Record<string, ExtraItemData> = {
     accentColor: '#0f766e',
     characterIds: ['doctor_doom', 'sam_wilson', 'stephen_strange', 'thor', 'bruce_banner', 'reed_richards']
   },
+  spider_man_4: {
+    heroIcon: '🕸️',
+    heroIconName: 'Film',
+    accentColor: '#dc2626',
+    characterIds: ['peter_parker']
+  },
   avengers_secret_wars: {
     heroIcon: '☄️',
     heroIconName: 'Film',
     accentColor: '#701a75',
     characterIds: ['doctor_doom', 'peter_parker', 'wolverine', 'deadpool', 'thor', 'stephen_strange']
+  },
+  vision_quest: {
+    heroIcon: '💎',
+    heroIconName: 'Tv',
+    accentColor: '#0284c7',
+    characterIds: ['vision']
   }
 };
