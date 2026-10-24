@@ -15,7 +15,8 @@ import DetailModal from './components/DetailModal';
 import DatabaseAdmin from './components/DatabaseAdmin';
 import HelpPage from './components/HelpPage';
 
-const CURRENT_MCU_DATA_VERSION = '2026.10-v2';
+const CURRENT_MCU_DATA_VERSION = '2026.10-v4';
+const DELETED_CANONICAL_IDS = new Set(['blade']);
 
 export default function App() {
   // --- STATES ---
@@ -72,7 +73,7 @@ export default function App() {
           try {
             const parsed = JSON.parse(storedItems) as McuItem[];
             const canonicalIds = new Set(mcuItems.map(x => x.id));
-            customUserItems = parsed.filter(item => !canonicalIds.has(item.id));
+            customUserItems = parsed.filter(item => !canonicalIds.has(item.id) && !DELETED_CANONICAL_IDS.has(item.id));
           } catch (e) {
             console.error('Failed to parse stored items during migration:', e);
           }
@@ -82,7 +83,7 @@ export default function App() {
           try {
             const parsedExtra = JSON.parse(storedExtra);
             Object.keys(parsedExtra).forEach(k => {
-              if (!mcuExtraDataMap[k]) {
+              if (!mcuExtraDataMap[k] && !DELETED_CANONICAL_IDS.has(k)) {
                 customUserExtra[k] = parsedExtra[k];
               }
             });
@@ -91,9 +92,9 @@ export default function App() {
           }
         }
 
-        const mergedItems = [...mcuItems, ...customUserItems].sort(
-          (a, b) => new Date(a.releaseDate).getTime() - new Date(b.releaseDate).getTime()
-        );
+        const mergedItems = [...mcuItems, ...customUserItems]
+          .filter(item => !DELETED_CANONICAL_IDS.has(item.id))
+          .sort((a, b) => new Date(a.releaseDate).getTime() - new Date(b.releaseDate).getTime());
         const mergedExtra = { ...mcuExtraDataMap, ...customUserExtra };
 
         setDbItems(mergedItems);
@@ -108,25 +109,36 @@ export default function App() {
         let finalExtra: Record<string, ExtraItemData> = { ...mcuExtraDataMap };
 
         if (storedItems) {
-          const parsedItems = JSON.parse(storedItems) as McuItem[];
-          const storedIds = new Set(parsedItems.map((item: any) => item.id));
-          const missingItems = mcuItems.filter((item: any) => !storedIds.has(item.id));
-          finalItems = [...parsedItems, ...missingItems];
+          try {
+            const parsedItems = JSON.parse(storedItems) as McuItem[];
+            const canonicalIds = new Set(mcuItems.map((item: any) => item.id));
+            // Keep user-added custom items only (excluding canonical IDs and deleted canonical IDs)
+            const userCustomItems = parsedItems.filter((item: any) => !canonicalIds.has(item.id) && !DELETED_CANONICAL_IDS.has(item.id));
+            finalItems = [...mcuItems, ...userCustomItems];
+          } catch (e) {
+            console.error('Failed to parse stored items:', e);
+          }
         }
 
         if (storedExtra) {
-          const parsedExtra = JSON.parse(storedExtra);
-          finalExtra = { ...mcuExtraDataMap, ...parsedExtra };
+          try {
+            const parsedExtra = JSON.parse(storedExtra);
+            finalExtra = { ...mcuExtraDataMap, ...parsedExtra };
+          } catch (e) {
+            console.error('Failed to parse stored extra:', e);
+          }
         }
 
-        finalItems.sort((a, b) => new Date(a.releaseDate).getTime() - new Date(b.releaseDate).getTime());
+        finalItems = finalItems
+          .filter(item => !DELETED_CANONICAL_IDS.has(item.id))
+          .sort((a, b) => new Date(a.releaseDate).getTime() - new Date(b.releaseDate).getTime());
 
         setDbItems(finalItems);
         setExtraMap(finalExtra);
       }
     } catch (e) {
       console.error('Failed to load custom database:', e);
-      setDbItems(mcuItems);
+      setDbItems(mcuItems.filter(item => !DELETED_CANONICAL_IDS.has(item.id)));
       setExtraMap(mcuExtraDataMap);
     }
   }, []);

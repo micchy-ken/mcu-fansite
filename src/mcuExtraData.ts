@@ -58,7 +58,6 @@ export const charactersDb: Record<string, CharacterInfo> = {
   kingpin: { id: 'kingpin', nameJa: 'ウィルソン・フィスク', heroNameJa: 'キングピン', emoji: '🕶️' },
   reed_richards: { id: 'reed_richards', nameJa: 'リード・リチャーズ', heroNameJa: 'ミスター・ファンタスティック', emoji: '4️⃣' },
   doctor_doom: { id: 'doctor_doom', nameJa: 'ビクター・ドゥーム', heroNameJa: 'ドクター・ドゥーム', emoji: '🎭' },
-  blade: { id: 'blade', nameJa: 'エリック・ブルックス', heroNameJa: 'ブレイド', emoji: '🗡️' },
   simon_williams: { id: 'simon_williams', nameJa: 'サイモン・ウィリアムズ', heroNameJa: 'ワンダーマン', emoji: '🎬' },
   maya_lopez: { id: 'maya_lopez', nameJa: 'マヤ・ロペス', heroNameJa: 'エコー', emoji: '🎯' },
   jack_russell: { id: 'jack_russell', nameJa: 'ジャック・ラッセル', heroNameJa: 'ウェアウルフ', emoji: '🐺' }
