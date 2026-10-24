@@ -451,12 +451,6 @@ export const mcuExtraDataMap: Record<string, ExtraItemData> = {
     accentColor: '#2563eb',
     characterIds: ['reed_richards']
   },
-  blade: {
-    heroIcon: '🗡️',
-    heroIconName: 'Film',
-    accentColor: '#0f172a',
-    characterIds: ['blade']
-  },
   avengers_doomsday: {
     heroIcon: '🎭',
     heroIconName: 'Film',

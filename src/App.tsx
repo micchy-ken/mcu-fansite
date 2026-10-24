@@ -15,7 +15,7 @@ import DetailModal from './components/DetailModal';
 import DatabaseAdmin from './components/DatabaseAdmin';
 import HelpPage from './components/HelpPage';
 
-const CURRENT_MCU_DATA_VERSION = '2026.10-v4';
+const CURRENT_MCU_DATA_VERSION = '2026.10-v2';
 
 export default function App() {
   // --- STATES ---

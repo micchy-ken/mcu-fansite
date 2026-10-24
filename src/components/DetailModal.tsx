@@ -155,7 +155,9 @@ export default function DetailModal({ item, review, onClose, onSaveReview, onCha
               </div>
               <div className="bg-slate-900 p-3 rounded-lg border border-slate-850">
                 <span className="text-[10px] font-bold text-slate-500 uppercase block font-mono">初公開日 (米国)</span>
-                <span className="text-sm font-semibold text-slate-200 mt-1 block font-mono">{item.releaseDate}</span>
+                <span className="text-sm font-semibold text-slate-200 mt-1 block font-mono">
+                  {item.releaseDate === '2029-12-31' ? '公開延期（時期未定 / カレンダー削除）' : item.releaseDate}
+                </span>
               </div>
             </div>
           </div>
@@ -192,7 +194,7 @@ export default function DetailModal({ item, review, onClose, onSaveReview, onCha
                           <span className="text-[9px] text-slate-500 block leading-none">{char.nameJa}</span>
                         )}
                       </div>
-                      <span className="text-[10px] bg-slate-950 px-1.5 py-0.5 rounded border border-slate-800 text-slate-500 font-mono group-hover/char:border-red-500/30 group-hover/char:text-red-400">
+                      <span className="text-[10px] bg-slate-950 px-1.5 py-0.5 rounded border border-slate-850 text-slate-500 font-mono group-hover/char:border-red-500/30 group-hover/char:text-red-400">
                         {appearances}作品
                       </span>
                     </button>
@@ -295,12 +297,18 @@ export default function DetailModal({ item, review, onClose, onSaveReview, onCha
               <div className="bg-slate-950 p-5 rounded-xl border border-sky-950/40 text-left space-y-3">
                 <div className="flex items-center gap-2 text-sky-400 font-bold text-sm">
                   <Calendar className="w-4 h-4 text-sky-400" />
-                  <span>公開予定（未来の時間軸）の作品です</span>
+                  <span>{item.releaseDate === '2029-12-31' ? '公開延期・日程未定の作品です' : '公開予定（未来の時間軸）の作品です'}</span>
                 </div>
-                <p className="text-xs text-slate-400 leading-relaxed">
-                  この作品は米国公開予定日が <strong className="text-slate-300 font-mono">{item.releaseDate}</strong> となっており、まだリリースされていない未来の作品です。
-                  公開日を迎えると鑑賞チェック、お気に入り設定、評価星、感想メモが書き込めるようになります。
-                </p>
+                {item.releaseDate === '2029-12-31' ? (
+                  <p className="text-xs text-slate-400 leading-relaxed">
+                    この作品は制作スケジュールの見直し・再調整によりディズニーの全米公開カレンダーから削除され、<strong className="text-amber-400 font-bold">無期限公開延期（公開時期未定）</strong>となっています。
+                  </p>
+                ) : (
+                  <p className="text-xs text-slate-400 leading-relaxed">
+                    この作品は米国公開予定日が <strong className="text-slate-300 font-mono">{item.releaseDate}</strong> となっており、まだリリースされていない未来の作品です。
+                    公開日を迎えると鑑賞チェック、お気に入り設定、評価星、感想メモが書き込めるようになります。
+                  </p>
+                )}
               </div>
             ) : (
               <>

@@ -68,11 +68,13 @@ export default function McuCard({
     }
   };
 
-  const formattedDate = new Date(item.releaseDate).toLocaleDateString('ja-JP', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric'
-  });
+  const formattedDate = item.releaseDate === '2029-12-31'
+    ? '公開延期（時期未定）'
+    : new Date(item.releaseDate).toLocaleDateString('ja-JP', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+      });
 
   return (
     <motion.div
