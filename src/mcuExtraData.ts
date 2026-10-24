@@ -450,6 +450,12 @@ export const mcuExtraDataMap: Record<string, ExtraItemData> = {
     accentColor: '#2563eb',
     characterIds: ['reed_richards']
   },
+  daredevil_born_again_s2: {
+    heroIcon: '👹',
+    heroIconName: 'Tv',
+    accentColor: '#991b1b',
+    characterIds: ['matt_murdock', 'kingpin']
+  },
   avengers_doomsday: {
     heroIcon: '🎭',
     heroIconName: 'Film',
